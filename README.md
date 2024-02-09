@@ -4,8 +4,11 @@ A Vagrant installation with simple provisioning of MariaDB Columnstore, maintain
 
 ## Requirements
 
-* Vagrant
-* [libvirt](https://vagrant-libvirt.github.io/vagrant-libvirt/) plugin
+Vagrant with the* [libvirt](https://vagrant-libvirt.github.io/vagrant-libvirt/) plugin.
+
+    sudo apt install qemu-kvm
+    vagrant plugin install vagrant-libvirt
+
 
 ## Usage
 
