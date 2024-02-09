@@ -1,7 +1,6 @@
 # MariaDB Columnstore Vagrant
 
-A Vagrant installation with simple provision of MariaDB Columnstore, maintained by Vettabase.
-
+A Vagrant installation with simple provisioning of MariaDB Columnstore, maintained by Vettabase.
 
 ## Requirements
 
@@ -12,12 +11,16 @@ A Vagrant installation with simple provision of MariaDB Columnstore, maintained 
 
 ### Single Node
 
-Install and start the server, then login directory to the MariaDB shell. Optionally load some data into a Columnstore Engine table.
+Install and start the server, then login directory to the MariaDB shell:
 
     vagrant up
-    vagrant ssh -- mariadb
-    MariaDB > source /vagrant/sample.sql
+    vagrant ssh -c mariadb
+
+Optionally load some sample data:
+
+    vagrant ssh -c /vagrant/sample/load.sh
 
 ## TODO
-* Multi-node
+
+* Multi-node setup
 * Include an S3 target like Minio

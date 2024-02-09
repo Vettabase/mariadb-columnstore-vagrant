@@ -1,0 +1,1 @@
+-- Add custom SQL to be executed post-install of MariaDB
