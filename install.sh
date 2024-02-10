@@ -143,7 +143,7 @@ mariadb_configure_s3() {
         exit 1
     fi
 }
-
++
 mariadb_configure_custom_sql() {
     VAGRANT_USER="GRANT ALL PRIVILEGES ON *.* TO 'vagrant'@'localhost' IDENTIFIED VIA unix_socket;"
     mariadb --show-warnings -NBe "${VAGRANT_USER}"
@@ -187,3 +187,5 @@ apt-get install -yq \
 mariadb_configure_columnstore
 mariadb_configure_s3
 mariadb_configure_custom_sql
+
+. /vagrant/utils/timezones-load.sh
