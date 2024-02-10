@@ -2,6 +2,49 @@
 
 A Vagrant installation with simple provisioning of MariaDB Columnstore, maintained by Vettabase.
 
+## About MariaDB ColumnStore
+
+Technically, ColumnStore is a storage engine for MariaDB.
+
+In practice it's much more than that, turning MariaDB into a clustered
+data sharding solution for analytical workloads.
+
+You can use it alongside with any other MariaDB feature: any SQL query,
+other storage engines, Galera cluster, and so on.
+
+For MariaDB, refer to the MariaDB KnowledgeBase:
+
+https://mariadb.com/kb/
+
+ColumnStore documentation was taken away from the MariaDB KB,
+and replaced with incomplete, non-free documentation that is part
+of MariaDB Enterprise documentation.
+
+To bring back free documentation for the community, Vettabase started
+the MariaDB ColumnStore Unofficial Documentation Project:
+
+http://columnstore-docs.vettabase.com/
+
+### About This Vagrantfile
+
+We decided to build this Vagrantfile because the official MariaDB
+ColumnStore Vagrant image was discontinued and completely removed
+(see [MCOL-3906](https://jira.mariadb.org/browse/MCOL-3906)).
+
+### Docker Images for MariaDB ColumnStore
+
+At the time of this writing, official MariaDB ColumnStore Docker images
+are based on MariaDB Enterprise and quite outdated (see this
+[bug report](https://jira.mariadb.org/browse/MCOL-5646)).
+
+For this reason, Vettabase decided to develop and maintain its own Docker
+image:
+
+https://hub.docker.com/r/vettadock/mariadb-columnstore
+
+**NOTE: At the time of this writing, our Dockerfile is not production ready.
+When it is, a `latest` tag will exist.**
+
 ## Requirements
 
 This Vagrantfile is tested with these providers:
