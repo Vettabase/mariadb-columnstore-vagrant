@@ -62,7 +62,10 @@ This will restart MariaDB. To avoid a restart, set `SKIP_RESTART=1`.
 
 ## Maintainers and Credits
 
-This Vagrantfile was originally developed by Richard Bensley <richard.bensley@vettabase.com>.
+This is a [Vettabase](https://vettabase.com) project.
+
+This Vagrantfile was originally developed and is currently maintained
+by Richard Bensley <richard.bensley@vettabase.com>.
 
 Anyone who makes a relevant contribution to this project will be
 kudoed here, unless they ask not to be mentioned.
