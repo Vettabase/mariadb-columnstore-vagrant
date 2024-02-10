@@ -48,6 +48,13 @@ To run a query non-interactively:
 * Multi-node setup
 * Include an S3 target like Minio
 
+## Maintainers and Credits
+
+This Vagrantfile was originally developed by Richard Bensley <richard.bensley@vettabase.com>.
+
+Anyone who makes a relevant contribution to this project will be
+kudoed here, unless they ask not to be mentioned.
+
 ## Copyright and License
 
 Copyright © Vettabase 2024
