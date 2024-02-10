@@ -47,3 +47,12 @@ To run a query non-interactively:
 
 * Multi-node setup
 * Include an S3 target like Minio
+
+## Copyright and License
+
+Copyright © Vettabase 2024
+
+This Vagrantfile is distributed under the terms of the GPL, version 3.
+
+If you haven't received a copy of the license, please find it here:
+https://www.gnu.org/licenses/gpl-3.0.txt
