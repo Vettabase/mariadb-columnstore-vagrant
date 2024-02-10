@@ -43,6 +43,18 @@ To run a query non-interactively:
 
     vagrant ssh -c mariadb -e "SELECT VERSION();"
 
+### Operations
+
+To operate the MariaDB service, use the regular [systemd](https://www.freedesktop.org/wiki/Software/systemd/)
+commands.
+
+To update the timezone system tables:
+
+    vagrant ssh
+    /vagrant/utils/timezones-load.sh
+
+This will restart MariaDB. To avoid a restart, set `SKIP_RESTART=1`.
+
 ## TODO
 
 * Multi-node setup
