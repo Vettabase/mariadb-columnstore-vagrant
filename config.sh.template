@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+export BOX="generic/ubuntu2204"
+
+export OS_SWAPPINESS=1
