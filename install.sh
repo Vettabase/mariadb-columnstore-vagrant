@@ -187,7 +187,7 @@ apt-get install -yq \
 mariadb_configure_columnstore
 mariadb_configure_s3
 mariadb_configure_custom_sql
-
+. /vagrant/utils/timezones-load.sh
 
 echo '<------------------------------->
 <   MariaDB ColumnStore Image   >
@@ -200,3 +200,4 @@ http://columnstore-docs.vettabase.com
 To obtain assistance or training from Vettabase:
 https://vettabase.com
 ' > /etc/motd
+
