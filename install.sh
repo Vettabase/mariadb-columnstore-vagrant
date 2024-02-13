@@ -187,8 +187,21 @@ apt-get install -yq \
 mariadb_configure_columnstore
 mariadb_configure_s3
 mariadb_configure_custom_sql
+. /vagrant/utils/timezones-load.sh
 
 # set vm.swappiness specified value and persist it
 sysctl vm.swappiness=$OS_SWAPPINESS
 echo $OS_SWAPPINESS > /proc/sys/vm/swappiness
 echo "vm.swappiness=$OS_SWAPPINESS" >> /etc/sysctl.conf
+
+echo '<------------------------------->
+<   MariaDB ColumnStore Image   >
+<     by Vettabasse             >
+<------------------------------->
+
+MariaDB ColumnStore Unofficial Documentation Project:
+http://columnstore-docs.vettabase.com
+
+To obtain assistance or training from Vettabase:
+https://vettabase.com
+' > /etc/motd
