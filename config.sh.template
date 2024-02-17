@@ -3,3 +3,5 @@
 export BOX="generic/ubuntu2204"
 
 export OS_SWAPPINESS=1
+
+export OS_INSTALL_MYCLI=1
