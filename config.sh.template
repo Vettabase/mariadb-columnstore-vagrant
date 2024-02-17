@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
+# Basebox opgions
 export BOX="generic/ubuntu2204"
 
+# OS configuration options
 export OS_SWAPPINESS=1
 
+# Additional utilities
 export OS_INSTALL_MYCLI=1
