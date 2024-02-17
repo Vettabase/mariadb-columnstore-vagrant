@@ -86,6 +86,37 @@ To run a query non-interactively:
 
     vagrant ssh -c mariadb -e "SELECT VERSION();"
 
+### mycli
+
+MariaDB official CLI client (`mariadb`) is always installed.
+
+By default, mycli is also installed. If you don't want to install it,
+set `OS_INSTALL_MYCLI` to any value other than 1.
+
+The following scripts allow to install, upgrade or uninstall mycli later:
+
+* `mysqli-install.sh`
+* `mycli-upgrade.sh`
+* `mycli-uninstall.sh`
+
+They are in the `$PATH` and the default user can run them without `sudo`.
+
+To use mycli interactively:
+
+```
+mycli
+```
+
+To run a query non-interactively:
+
+```
+mycli -e "SELECT VERSION()"
+```
+
+mycli official website:
+
+https://www.mycli.net/
+
 ### Operations
 
 To operate the MariaDB service, use the regular [systemd](https://www.freedesktop.org/wiki/Software/systemd/)
