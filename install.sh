@@ -193,6 +193,9 @@ if [ $OS_INSTALL_MYCLI == 1 ]; then
     . /vagrant/utils/mycli-install.sh
 fi
 
+# make scripts in utils/ easily available for later use
+echo 'PATH=$PATH:/vagrant/utils' >> /etc/profile
+
 # set vm.swappiness specified value and persist it
 sysctl vm.swappiness=$OS_SWAPPINESS
 echo $OS_SWAPPINESS > /proc/sys/vm/swappiness

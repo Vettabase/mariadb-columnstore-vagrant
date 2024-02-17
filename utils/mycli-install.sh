@@ -3,7 +3,8 @@
 # Install mycli CLI from pip
 
 echo 'Installing pip3 if not present'
-DEBIAN_FRONTEND=noninteractive apt install -y python3-pip
+export DEBIAN_FRONTEND=noninteractive
+sudo --preserve-env=DEBIAN_FRONTEND apt install -y python3-pip
 
 echo 'Installing mycli from pip3'
-pip3 install --no-input mycli
+sudo pip3 install --no-input mycli
