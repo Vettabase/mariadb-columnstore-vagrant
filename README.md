@@ -2,6 +2,11 @@
 
 A Vagrant installation with simple provisioning of MariaDB Columnstore, maintained by Vettabase.
 
+This Vagrantfile is used with default options to produce the `vettabase/mariadb-columnstore`
+image:
+
+https://app.vagrantup.com/vettabase/boxes/mariadb-columnstore
+
 ## About MariaDB ColumnStore
 
 Technically, ColumnStore is a storage engine for MariaDB.
