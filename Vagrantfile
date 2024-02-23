@@ -25,7 +25,8 @@ Vagrant.configure("2") do |config|
         config.vm.hostname = vm_id
         node.vm.provision "shell", privileged: true, path: "install.sh",
             env: {
-                'OS_SWAPPINESS' => ENV['OS_SWAPPINESS'] || 1
+                'OS_SWAPPINESS' => ENV['OS_SWAPPINESS'] || 1,
+                'OS_INSTALL_MYCLI' => ENV['OS_INSTALL_MYCLI'] || 1
             }
     end
   end
