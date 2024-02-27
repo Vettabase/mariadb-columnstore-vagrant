@@ -183,6 +183,27 @@ apt-get install -yq \
     mariadb-plugin-columnstore \
     mariadb-plugin-s3
 
+# MDB_EXTRA_ENGINES os a comma-separated list of engines to install.
+# We wrap it with additional commas to avoid confusion if an engine name
+# is contained in another, which currenlty is the case for FEDERATED/FEDERATEDX.
+if [[ $MDB_EXTRA_ENGINES == 'ALL' ]]; then
+    MDB_EXTRA_ENGINES=',CONNECT,MROONGA,OQGRAPH,SPIDER,ARCHIVE,BLACKHOLE,FEDERATEDX,'
+else
+    MDB_EXTRA_ENGINES=$(echo $MDB_EXTRA_ENGINES | tr -d ' ')
+    MDB_EXTRA_ENGINES=",$MDB_EXTRA_ENGINES,"
+    MDB_EXTRA_ENGINES=$(echo "$MDB_EXTRA_ENGINES" | tr '[:lower:]' '[:upper:]')
+fi
+# plugins that are in the plugin_dir but not installed
+[[ $MDB_EXTRA_ENGINES == *",CONNECT,"* ]]     && apt-get install -yq mariadb-plugin-connect
+[[ $MDB_EXTRA_ENGINES == *",MROONGA,"* ]]     && apt-get install -yq mariadb-plugin-mroonga
+[[ $MDB_EXTRA_ENGINES == *",OQGRAPH,"* ]]     && apt-get install -yq mariadb-plugin-oqgraph
+[[ $MDB_EXTRA_ENGINES == *",SPIDER,"* ]]      && apt-get install -yq mariadb-plugin-spider
+# plusing that need be installed from a separate package
+[[ $MDB_EXTRA_ENGINES == *",ARCHIVE,"* ]]     && mariadb -e "INSTALL SONAME 'ha_archive';"
+[[ $MDB_EXTRA_ENGINES == *",BLACKHOLE,"* ]]   && mariadb -e "INSTALL SONAME 'ha_blackhole';"
+[[ $MDB_EXTRA_ENGINES == *",FEDERATEDX,"* ]]  && mariadb -e "INSTALL SONAME 'ha_federated';"
+[[ $MDB_EXTRA_ENGINES == *",FEDERATEDX,"* ]]  && mariadb -e "INSTALL SONAME 'ha_federatedx';"
+
 # Run config
 mariadb_configure_columnstore
 mariadb_configure_s3

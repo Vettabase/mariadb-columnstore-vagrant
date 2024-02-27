@@ -26,7 +26,8 @@ Vagrant.configure("2") do |config|
         node.vm.provision "shell", privileged: true, path: "install.sh",
             env: {
                 'OS_SWAPPINESS' => ENV['OS_SWAPPINESS'] || 1,
-                'OS_INSTALL_MYCLI' => ENV['OS_INSTALL_MYCLI'] || 1
+                'OS_INSTALL_MYCLI' => ENV['OS_INSTALL_MYCLI'] || 1,
+                'MDB_EXTRA_ENGINES' => ENV['MDB_EXTRA_ENGINES'] || 'CONNECT,SPIDER,BLACKHOLE'
             }
     end
   end
