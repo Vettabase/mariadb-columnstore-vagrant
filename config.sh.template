@@ -16,3 +16,6 @@ export OS_SWAPPINESS=1
 
 # Additional utilities
 export OS_INSTALL_MYCLI=1
+
+# Additional engines to install
+export MDB_EXTRA_ENGINES='CONNECT,SPIDER,BLACKHOLE'
