@@ -3,6 +3,14 @@
 # Basebox opgions
 export BOX="generic/ubuntu2204"
 
+# MariaDB options
+export MDB_VERSION='11.3'
+# Allow connections from the host or other VMs
+export MDB_ALLOW_REMOTE_CONNECTIONS=1
+
+# OS version codename as it should be used in the repositories
+export OS_CODENAME="jammy"
+
 # OS configuration options
 export OS_SWAPPINESS=1
 
