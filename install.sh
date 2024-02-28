@@ -187,6 +187,21 @@ mariadb_configure_s3
 mariadb_configure_custom_sql
 . /vagrant/utils/timezones-load.sh
 
+# make config changes that require restart, then restart if necessary
+CONF_FILE=/etc/mysql/my.cnf
+NEED_RESTART=0
+echo ''                          >> $CONF_FILE
+echo '[server]'                  >> $CONF_FILE
+if [ $MDB_ALLOW_REMOTE_CONNECTIONS == 1 ]; then
+    echo 'bind_address=0.0.0.0'  >> $CONF_FILE
+    NEED_RESTART=1
+fi
+echo ''                          >> $CONF_FILE
+
+if [ $NEED_RESTART == 1 ]; then
+    systemctl restart mariadb
+fi
+
 if [ $OS_INSTALL_MYCLI == 1 ]; then
     . /vagrant/utils/mycli-install.sh
 fi
