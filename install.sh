@@ -169,9 +169,7 @@ apt-get install -yq \
     tzdata
 
 
-MARIADB_REPO_VERSION="10.11"
-DISTRO_VERSION="jammy"
-REPO_URL="deb [signed-by=/etc/apt/keyrings/mariadb-keyring.pgp] https://deb.mariadb.org/${MARIADB_REPO_VERSION}/ubuntu ${DISTRO_VERSION} main"
+REPO_URL="deb [signed-by=/etc/apt/keyrings/mariadb-keyring.pgp] https://deb.mariadb.org/${MDB_VERSION}/ubuntu ${OS_CODENAME} main"
 REPO_FILE="/etc/apt/sources.list.d/mariadb.list"
 mkdir -p /etc/apt-get/keyrings
 curl -o /etc/apt/keyrings/mariadb-keyring.pgp 'https://mariadb.org/mariadb_release_signing_key.pgp'
@@ -209,6 +207,21 @@ mariadb_configure_columnstore
 mariadb_configure_s3
 mariadb_configure_custom_sql
 . /vagrant/utils/timezones-load.sh
+
+# make config changes that require restart, then restart if necessary
+CONF_FILE=/etc/mysql/my.cnf
+NEED_RESTART=0
+echo ''                          >> $CONF_FILE
+echo '[server]'                  >> $CONF_FILE
+if [ $MDB_ALLOW_REMOTE_CONNECTIONS == 1 ]; then
+    echo 'bind_address=0.0.0.0'  >> $CONF_FILE
+    NEED_RESTART=1
+fi
+echo ''                          >> $CONF_FILE
+
+if [ $NEED_RESTART == 1 ]; then
+    systemctl restart mariadb
+fi
 
 if [ $OS_INSTALL_MYCLI == 1 ]; then
     . /vagrant/utils/mycli-install.sh

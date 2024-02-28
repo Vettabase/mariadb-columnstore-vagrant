@@ -25,9 +25,12 @@ Vagrant.configure("2") do |config|
         config.vm.hostname = vm_id
         node.vm.provision "shell", privileged: true, path: "install.sh",
             env: {
+                'OS_CODENAME' => ENV['OS_CODENAME'] || 'jammy',
                 'OS_SWAPPINESS' => ENV['OS_SWAPPINESS'] || 1,
                 'OS_INSTALL_MYCLI' => ENV['OS_INSTALL_MYCLI'] || 1,
                 'MDB_EXTRA_ENGINES' => ENV['MDB_EXTRA_ENGINES'] || 'CONNECT,SPIDER,BLACKHOLE'
+                'MDB_VERSION' => ENV['MDB_VERSION'] || '11.3',
+                'MDB_ALLOW_REMOTE_CONNECTIONS' => ENV['MDB_ALLOW_REMOTE_CONNECTIONS'] || 1
             }
     end
   end
