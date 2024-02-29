@@ -176,6 +176,7 @@ curl -o /etc/apt/keyrings/mariadb-keyring.pgp 'https://mariadb.org/mariadb_relea
 echo ${REPO_URL} > ${REPO_FILE}
 apt-get update -yq
 apt-get install -yq \
+    jq \
     mariadb-server \
     mariadb-backup \
     mariadb-plugin-columnstore \
