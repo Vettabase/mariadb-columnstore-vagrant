@@ -180,7 +180,20 @@ apt-get install -yq \
     mariadb-server \
     mariadb-backup \
     mariadb-plugin-columnstore \
+    mariadb-columnstore-cmapi \
     mariadb-plugin-s3
+
+systemctl enable mariadb
+systemctl enable mariadb-columnstore-cmapi
+systemctl restart mariadb
+systemctl restart mariadb-columnstore-cmapi
+
+sed -i "s|^log.access_file.*|log.access_file='/var/lib/mysql/cs.access.log'|" /etc/columnstore/cmapi_server.conf
+sed -i "s|^log.error.*|log.error='/var/lib/mysql/cs.error.log'|" /etc/columnstore/cmapi_server.conf
+#mcs cluster set api-key --key "$MDB_CMAPI_KEY"
+
+# previous changes require restart
+systemctl restart mariadb-columnstore-cmapi
 
 # MDB_EXTRA_ENGINES os a comma-separated list of engines to install.
 # We wrap it with additional commas to avoid confusion if an engine name
