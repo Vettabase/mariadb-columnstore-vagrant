@@ -30,6 +30,7 @@ Vagrant.configure("2") do |config|
                 'OS_INSTALL_MYCLI' => ENV['OS_INSTALL_MYCLI'] || 1,
                 'MDB_EXTRA_ENGINES' => ENV['MDB_EXTRA_ENGINES'] || 'CONNECT,SPIDER,BLACKHOLE',
                 'MDB_VERSION' => ENV['MDB_VERSION'] || '11.3',
+                'MDB_CMAPI_KEY' => ENV['MDB_CMAPI_KEY'],
                 'MDB_ALLOW_REMOTE_CONNECTIONS' => ENV['MDB_ALLOW_REMOTE_CONNECTIONS'] || 1
             }
     end
