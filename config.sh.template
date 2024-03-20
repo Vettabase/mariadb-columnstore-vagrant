@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export _CONFIGURED=1
+
 # Basebox opgions
 export BOX="generic/ubuntu2204"
 
