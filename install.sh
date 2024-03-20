@@ -189,8 +189,8 @@ systemctl restart mariadb
 systemctl restart mariadb-columnstore-cmapi
 
 CMAPI_CONFIG_FILE=/etc/columnstore/cmapi_server.conf
-sed -i "s|^log.access_file.*|log.access_file='/var/lib/mysql/cs.access.log'|" $CMAPI_CONFIG_FILE
-sed -i "s|^log.error.*|log.error='/var/lib/mysql/cs.error.log'|" $CMAPI_CONFIG_FILE
+sed -i "s|^log.access_file.*|log.access_file = '/var/lib/columnstore/cs.access.log'|" $CMAPI_CONFIG_FILE
+sed -i "s|^log.error_file.*|log.error_file = '/var/lib/columnstore/cs.error.log'|" $CMAPI_CONFIG_FILE
 if [ -z "$MDB_CMAPI_KEY" ]; then
     MDB_CMAPI_KEY=$( openssl rand -hex 32 )
 fi
