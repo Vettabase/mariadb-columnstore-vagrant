@@ -251,7 +251,7 @@ echo 'PATH=$PATH:/vagrant/utils' >> /etc/profile
 # set vm.swappiness specified value and persist it
 sysctl vm.swappiness=$OS_SWAPPINESS
 echo $OS_SWAPPINESS > /proc/sys/vm/swappiness
-echo "vm.swappiness=$OS_SWAPPINESS" >> /etc/sysctl.conf
+echo "vm.swappiness=$OS_SWAPPINESS" >> $( ls -1 /etc/sysctl.d/*.conf | tail -1 )
 
 echo '<------------------------------->
 <   MariaDB ColumnStore Image   >
