@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 
+export _CONFIGURED=1
+
 # Basebox opgions
 export BOX="generic/ubuntu2204"
 
 # MariaDB options
 export MDB_VERSION='11.3'
+# Auth key to use when calling cmapi
+export MDB_CMAPI_KEY=secret
 # Allow connections from the host or other VMs
 export MDB_ALLOW_REMOTE_CONNECTIONS=1
 

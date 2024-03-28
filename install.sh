@@ -176,10 +176,28 @@ curl -o /etc/apt/keyrings/mariadb-keyring.pgp 'https://mariadb.org/mariadb_relea
 echo ${REPO_URL} > ${REPO_FILE}
 apt-get update -yq
 apt-get install -yq \
+    jq \
     mariadb-server \
     mariadb-backup \
     mariadb-plugin-columnstore \
+    mariadb-columnstore-cmapi \
     mariadb-plugin-s3
+
+systemctl enable mariadb
+systemctl enable mariadb-columnstore-cmapi
+systemctl restart mariadb
+systemctl restart mariadb-columnstore-cmapi
+
+CMAPI_CONFIG_FILE=/etc/columnstore/cmapi_server.conf
+sed -i "s|^log.access_file.*|log.access_file = '/var/lib/columnstore/cs.access.log'|" $CMAPI_CONFIG_FILE
+sed -i "s|^log.error_file.*|log.error_file = '/var/lib/columnstore/cs.error.log'|" $CMAPI_CONFIG_FILE
+if [ -z "$MDB_CMAPI_KEY" ]; then
+    MDB_CMAPI_KEY=$( openssl rand -hex 32 )
+fi
+mcs cluster set api-key --key "$MDB_CMAPI_KEY"
+
+# previous changes require restart
+systemctl restart mariadb-columnstore-cmapi
 
 # MDB_EXTRA_ENGINES os a comma-separated list of engines to install.
 # We wrap it with additional commas to avoid confusion if an engine name
@@ -199,7 +217,7 @@ fi
 # plusing that need be installed from a separate package
 [[ $MDB_EXTRA_ENGINES == *",ARCHIVE,"* ]]     && mariadb -e "INSTALL SONAME 'ha_archive';"
 [[ $MDB_EXTRA_ENGINES == *",BLACKHOLE,"* ]]   && mariadb -e "INSTALL SONAME 'ha_blackhole';"
-[[ $MDB_EXTRA_ENGINES == *",FEDERATEDX,"* ]]  && mariadb -e "INSTALL SONAME 'ha_federated';"
+[[ $MDB_EXTRA_ENGINES == *",FEDERATED,"* ]]   && mariadb -e "INSTALL SONAME 'ha_federated';"
 [[ $MDB_EXTRA_ENGINES == *",FEDERATEDX,"* ]]  && mariadb -e "INSTALL SONAME 'ha_federatedx';"
 
 # Run config
@@ -233,7 +251,7 @@ echo 'PATH=$PATH:/vagrant/utils' >> /etc/profile
 # set vm.swappiness specified value and persist it
 sysctl vm.swappiness=$OS_SWAPPINESS
 echo $OS_SWAPPINESS > /proc/sys/vm/swappiness
-echo "vm.swappiness=$OS_SWAPPINESS" >> /etc/sysctl.conf
+echo "vm.swappiness=$OS_SWAPPINESS" >> $( ls -1 /etc/sysctl.d/*.conf | tail -1 )
 
 echo '<------------------------------->
 <   MariaDB ColumnStore Image   >
