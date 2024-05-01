@@ -4,15 +4,18 @@
 require 'getoptlong'
 
 args = GetoptLong.new(
-  ['--nodes', GetoptLong::OPTIONAL_ARGUMENT]
+  ['--cluster-size', GetoptLong::OPTIONAL_ARGUMENT]
 )
 
-nodes=1
+cluster_size = ENV['MDB_CLUSTER_SIZE'] || 1
+if cluster_size == 'SINGLE'
+  cluster_size = 1
+end
 
 args.each do |argk, argv|
   case argk
-  when '--nodes'
-    nodes=argv.to_i
+  when '--cluster-size'
+    cluster_size=argv.to_i
   end
 end
 
@@ -21,7 +24,7 @@ Vagrant.configure("2") do |config|
   config.vm.box = ENV['BOX'] || "generic/ubuntu2204"
   config.vm.synced_folder ".", "/vagrant"
 
-  1.upto(nodes) do |i|
+  1.upto(cluster_size) do |i|
       vm_id = "cs#{i}"
       config.vm.define vm_id do |node|
         config.vm.post_up_message = (

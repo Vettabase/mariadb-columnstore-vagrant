@@ -166,6 +166,8 @@ mariadb_configure_custom_sql() {
     fi
 }
 
+groupadd -r mysql && useradd -r -g mysql mysql --home-dir /var/lib/mysql
+
 apt-get update -yq
 apt-get upgrade -yq
 apt-get install -yq \
@@ -175,8 +177,31 @@ apt-get install -yq \
     ca-certificates \
     gpg \
     tzdata \
-    jq \
-    nfs-kernel-server
+    jq
+
+if [ $MDB_CLUSTER_SIZE != 'SINGLE' ] || [ $MDB_CLUSTER_SIZE -gt 1 ]; then
+    sudo apt-get install -yq \
+        nfs-kernel-server \
+        nfs-common
+
+    for i in {1..${MDB_CLUSTER_SIZE}}
+    do
+        mkdir -p /var/lib/columnstore/data${i}
+        chown -R mysql:mysql /var/lib/columnstore/data${i}
+    done
+
+    echo "/var/ib/columnstore/data${NODE_NUMBER} *(rw,sync,no_subtree_check)" > /etc/exports
+    exportfs -a
+    systemctl restart nfs-kernel-server
+
+    for i in {1..${MDB_CLUSTER_SIZE}}
+    do
+        if [[ ! i -eq ${NODE_NUMBER} ]]
+            RDATA=/var/lib/columnstore/data${i}
+            mount -t nfs 192.168.50.1${i}:${RDATA} ${RDATA}
+        fi
+    done
+fi
 
 
 REPO_URL="deb [signed-by=/etc/apt/keyrings/mariadb-keyring.pgp] https://deb.mariadb.org/${MDB_VERSION}/ubuntu ${OS_CODENAME} main"
@@ -186,12 +211,13 @@ curl -o /etc/apt/keyrings/mariadb-keyring.pgp 'https://mariadb.org/mariadb_relea
 echo ${REPO_URL} > ${REPO_FILE}
 apt-get update -yq
 apt-get install -yq \
-    jq \
     mariadb-server \
     mariadb-backup \
     mariadb-plugin-columnstore \
-    mariadb-columnstore-cmapi \
     mariadb-plugin-s3
+
+systemctl stop mariadb
+systemctl stop mariadb-columnstore
 
 # MDB_CLUSTER_SIZE = 'SINGLE' excludes CMAPI.
 # In other cases:
@@ -200,10 +226,10 @@ apt-get install -yq \
 #     - Enable CMAPI logs
 #     - Generate a CMAPI key if needed
 #     - Restart CMAPI again to make config changes effective
-if [ $MDB_CLUSTER_SIZE != 'SINGLE' ]; then
+if [ $MDB_CLUSTER_SIZE != 'SINGLE' ] || [ $MDB_CLUSTER_SIZE -gt 1 ]; then
     apt-get install -yq \
-        mariadb-columnstore-cmapi
-
+        mariadb-columnstore-cmapi \
+    
     systemctl enable mariadb
     systemctl enable mariadb-columnstore-cmapi
     systemctl restart mariadb
