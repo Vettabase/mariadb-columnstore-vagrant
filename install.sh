@@ -22,6 +22,13 @@
 ##S3_HOSTNAME
 ##S3_PORT
 
+echo "##########################################"
+echo "#                                        #"
+echo "#       RUNNING INSTALL FOR NODE         #"
+echo "# ${NODE_NUMBER} OF ${MDB_CLUSTER_SIZED} #"
+echo "#                                        #"
+echo "##########################################"
+
 
 if [[ -z $1 ]]
 then
