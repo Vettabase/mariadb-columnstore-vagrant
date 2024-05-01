@@ -190,7 +190,9 @@ if [ $MDB_CLUSTER_SIZE != 'SINGLE' ] || [ $MDB_CLUSTER_SIZE -gt 1 ]; then
         chown -R mysql:mysql /var/lib/columnstore/data${i}
     done
 
-    echo "/var/ib/columnstore/data${NODE_NUMBER} *(rw,sync,no_subtree_check)" >> /etc/exports
+    LDATA="/var/lib/columnstore/data${NODE_NUMBER}"
+
+    echo "${LDATA} *(rw,sync,no_subtree_check)" >> /etc/exports
     exportfs -a
     systemctl restart nfs-kernel-server
 
