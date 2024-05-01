@@ -22,20 +22,24 @@
 ##S3_HOSTNAME
 ##S3_PORT
 
-echo "##########################################"
-echo "#                                        #"
-echo "#       RUNNING INSTALL FOR NODE         #"
-echo "# ${NODE_NUMBER} OF ${MDB_CLUSTER_SIZED} #"
-echo "#                                        #"
-echo "##########################################"
-
-
 if [[ -z $1 ]]
 then
     NODE_NUMBER=1
 else
     NODE_NUMBER=${2}
 fi
+
+if [[ MDB_CLUSTER_SIZE != 'SINGLE' ]]
+then
+    echo "##########################################"
+    echo "#                                        #"
+    echo "#       RUNNING INSTALL FOR NODE         #"
+    echo "# ${NODE_NUMBER} OF ${MDB_CLUSTER_SIZED} #"
+    echo "#                                        #"
+    echo "##########################################"
+fi
+
+
 
 export DEBIAN_FRONTEND=noninteractive
 export CS_CACHE_SIZE="${CS_CACHE_SIZE:-2g}"
