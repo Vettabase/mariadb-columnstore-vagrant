@@ -39,7 +39,7 @@ Vagrant.configure("2") do |config|
 
         node.vm.network "private_network", ip:"192.168.50.1#{i}"
         config.vm.hostname = vm_id
-        node.vm.provision "shell", privileged: true, path: "install.sh",
+        node.vm.provision "shell", privileged: true, path: "install.sh", args: "#{i}"
             env: {
                 'OS_CODENAME' => ENV['OS_CODENAME'] || 'jammy',
                 'OS_SWAPPINESS' => ENV['OS_SWAPPINESS'] || 1,

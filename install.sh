@@ -22,7 +22,16 @@
 ##S3_HOSTNAME
 ##S3_PORT
 
-CS_CACHE_SIZE="2g"
+
+if [[ -z $1 ]]
+then
+    NODE_NUMBER=1
+else
+    NODE_NUMBER=${2}
+fi
+
+export DEBIAN_FRONTEND=noninteractive
+export CS_CACHE_SIZE="${CS_CACHE_SIZE:-2g}"
 
 mariadb_configure_columnstore() {
 	echo "Configuring Columnstore"
@@ -157,7 +166,6 @@ mariadb_configure_custom_sql() {
     fi
 }
 
-export DEBIAN_FRONTEND=noninteractive
 apt-get update -yq
 apt-get upgrade -yq
 apt-get install -yq \
@@ -166,7 +174,9 @@ apt-get install -yq \
     pwgen \
     ca-certificates \
     gpg \
-    tzdata
+    tzdata \
+    jq \
+    nfs-kernel-server
 
 
 REPO_URL="deb [signed-by=/etc/apt/keyrings/mariadb-keyring.pgp] https://deb.mariadb.org/${MDB_VERSION}/ubuntu ${OS_CODENAME} main"
@@ -180,6 +190,7 @@ apt-get install -yq \
     mariadb-server \
     mariadb-backup \
     mariadb-plugin-columnstore \
+    mariadb-columnstore-cmapi \
     mariadb-plugin-s3
 
 # MDB_CLUSTER_SIZE = 'SINGLE' excludes CMAPI.
