@@ -1,24 +1,12 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-require 'getoptlong'
-
-args = GetoptLong.new(
-  ['--cluster-size', GetoptLong::OPTIONAL_ARGUMENT]
-)
-
 cluster_size = ENV['MDB_CLUSTER_SIZE'] || 1
-if cluster_size == 'SINGLE'
+if cluster_size.to_s == 'SINGLE'
   cluster_size = 1
+else
+  cluster_size = cluster_size.to_i
 end
-
-args.each do |argk, argv|
-  case argk
-  when '--cluster-size'
-    cluster_size=argv.to_i
-  end
-end
-
 
 Vagrant.configure("2") do |config|
   config.vm.box = ENV['BOX'] || "generic/ubuntu2204"
@@ -42,7 +30,7 @@ Vagrant.configure("2") do |config|
 
         node.vm.network "private_network", ip:"192.168.50.1#{i}"
         config.vm.hostname = vm_id
-        node.vm.provision "shell", privileged: true, path: "install.sh", args: "#{i}"
+        node.vm.provision "shell", privileged: true, path: "install.sh", args: "#{i}",
             env: {
                 'OS_CODENAME' => ENV['OS_CODENAME'] || 'jammy',
                 'OS_SWAPPINESS' => ENV['OS_SWAPPINESS'] || 1,
