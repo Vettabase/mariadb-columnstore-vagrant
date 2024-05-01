@@ -38,7 +38,13 @@ if [[ ! -f 'config.sh' ]]; then
     cp config.sh.template config.sh
 fi
 
-./config.sh
+. config.sh
+
+if [ -z "$_CONFIGURED" ];
+then
+    echo 'ERROR: The configuration file was not run or did not export configuration variaables'
+    exit 1
+fi
 
 action=$1
 

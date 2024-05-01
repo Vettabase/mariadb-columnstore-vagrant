@@ -72,6 +72,66 @@ Optionally load some sample data:
 
     vagrant ssh -c /vagrant/sample/load.sh
 
+### Configuration
+
+Using this Vagrantfile rather than Vagrant Cloud allows to change its configuration
+before creating a VM. The configuration is entirely contained in `config.sh`.
+If this file doesn't exist, it can be created by copying `config.sh.template`.
+If you don't do this, the file will be created when you run `vagrant up`.
+
+The variables are the following.
+
+`BOX`
+
+The name of the box to be used as a base box.
+It could be a base box tailored for your use case, or it could be a different
+operating system. In this casem you should also change `OS_CODENAME`.
+
+Default: `generic/ubuntu2204`
+
+`MDB_VERSION`
+
+MariaDB version. It should include the major and minor version, eg: 11.3.
+Can be any version included in the official repositories.
+
+Default: `11.3`
+
+`MDB_ALLOW_REMOTE_CONNECTIONS`
+
+Set exactly to `1` to allow non-local connections. This means that the
+`bind_address` variable will be set to `0.0.0.0` rather than the default
+`127.0.0.1`.
+
+Default: `1`
+
+`OS_CODENAME`
+
+Codename of the Linux distribution as it is used by the repositories.
+For example, for Ubuntu 22.04, it should be `jammy`.
+
+Default: `jammy`
+
+`OS_SWAPPINESS`
+
+The value of Linux kernel parameter `os.swappiness`.
+
+Default: `1`
+
+`OS_INSTALL_MYCLI`
+
+Set exactly to 1 to install the [mycli](https://www.mycli.net/) TUI.
+Whatever the choice, the VM will include scripts to install, upgrade
+or uninstall mycli later.
+
+Default: `1`
+
+`MDB_EXTRA_ENGINES`
+
+Additional storage engines that should be installed.
+It's a comma-separated, case-insensitive list. Spaces are ignored.
+
+Default: `CONNECT,SPIDER,BLACKHOLE`
+
 ### Using a MariaDB ColumnStore VM
 
 To log into the system:
