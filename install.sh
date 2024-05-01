@@ -180,24 +180,35 @@ apt-get install -yq \
     mariadb-server \
     mariadb-backup \
     mariadb-plugin-columnstore \
-    mariadb-columnstore-cmapi \
     mariadb-plugin-s3
 
-systemctl enable mariadb
-systemctl enable mariadb-columnstore-cmapi
-systemctl restart mariadb
-systemctl restart mariadb-columnstore-cmapi
+# MDB_CLUSTER_SIZE = 'SINGLE' excludes CMAPI.
+# In other cases:
+#     - Install CMPAI
+#     - Enable and restart both MariaDB and CMAPI services
+#     - Enable CMAPI logs
+#     - Generate a CMAPI key if needed
+#     - Restart CMAPI again to make config changes effective
+if [ $MDB_CLUSTER_SIZE != 'SINGLE' ]; then
+    apt-get install -yq \
+        mariadb-columnstore-cmapi
 
-CMAPI_CONFIG_FILE=/etc/columnstore/cmapi_server.conf
-sed -i "s|^log.access_file.*|log.access_file = '/var/lib/columnstore/cs.access.log'|" $CMAPI_CONFIG_FILE
-sed -i "s|^log.error_file.*|log.error_file = '/var/lib/columnstore/cs.error.log'|" $CMAPI_CONFIG_FILE
-if [ -z "$MDB_CMAPI_KEY" ]; then
-    MDB_CMAPI_KEY=$( openssl rand -hex 32 )
+    systemctl enable mariadb
+    systemctl enable mariadb-columnstore-cmapi
+    systemctl restart mariadb
+    systemctl restart mariadb-columnstore-cmapi
+
+    CMAPI_CONFIG_FILE=/etc/columnstore/cmapi_server.conf
+    sed -i "s|^log.access_file.*|log.access_file = '/var/lib/columnstore/cs.access.log'|" $CMAPI_CONFIG_FILE
+    sed -i "s|^log.error_file.*|log.error_file = '/var/lib/columnstore/cs.error.log'|" $CMAPI_CONFIG_FILE
+    if [ -z "$MDB_CMAPI_KEY" ]; then
+        MDB_CMAPI_KEY=$( openssl rand -hex 32 )
+    fi
+    mcs cluster set api-key --key "$MDB_CMAPI_KEY"
+
+    # previous changes require restart
+    systemctl restart mariadb-columnstore-cmapi
 fi
-mcs cluster set api-key --key "$MDB_CMAPI_KEY"
-
-# previous changes require restart
-systemctl restart mariadb-columnstore-cmapi
 
 # MDB_EXTRA_ENGINES os a comma-separated list of engines to install.
 # We wrap it with additional commas to avoid confusion if an engine name

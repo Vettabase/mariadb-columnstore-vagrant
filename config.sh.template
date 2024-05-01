@@ -11,6 +11,10 @@ export MDB_VERSION='11.3'
 export MDB_CMAPI_KEY=secret
 # Allow connections from the host or other VMs
 export MDB_ALLOW_REMOTE_CONNECTIONS=1
+# MariaDB ColumnStore cluster size.
+# Set to a positive int or 'SINGLE'.
+# When 'SINGLE', CMAPI is not installed.
+export MDB_CLUSTER_SIZE=SINGLE
 
 # OS version codename as it should be used in the repositories
 export OS_CODENAME="jammy"
