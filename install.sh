@@ -25,17 +25,17 @@
 if [[ -z $1 ]]
 then
     NODE_NUMBER=1
+elif [[ $1 == 'SINGLE' ]]
+then
+    NODE_NUMBER=1
 else
     NODE_NUMBER=${2}
 fi
 
-if [[ MDB_CLUSTER_SIZE != 'SINGLE' ]]
+if [[ $MDB_CLUSTER_SIZE != 'SINGLE' ]]
 then
     echo "##########################################"
-    echo "#                                        #"
-    echo "#       RUNNING INSTALL FOR NODE         #"
-    echo "# ${NODE_NUMBER} OF ${MDB_CLUSTER_SIZED} #"
-    echo "#                                        #"
+    echo "INSTALLING NODE ${NODE_NUMBER}/${MDB_CLUSTER_SIZE}"
     echo "##########################################"
 fi
 
