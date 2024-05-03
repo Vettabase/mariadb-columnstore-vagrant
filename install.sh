@@ -210,6 +210,7 @@ if [ $MDB_CLUSTER_SIZE != 'SINGLE' ] || [ $MDB_CLUSTER_SIZE -gt 1 ]; then
     for i in {1..${MDB_CLUSTER_SIZE}}
     do
         if [[ ! i -eq ${NODE_NUMBER} ]]
+        then
             RDATA=/var/lib/columnstore/data${i}
             mount -t nfs 192.168.50.1${i}:${RDATA} ${RDATA}
         fi
