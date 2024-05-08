@@ -180,7 +180,7 @@ mariadb_configure_custom_sql() {
 groupadd -r mysql && useradd -r -g mysql mysql --home-dir /var/lib/mysql
 
 apt-get update -yq
-apt-get upgrade -yq
+#apt-get upgrade -yq
 apt-get install -yq \
     apt-transport-https \
     curl \
@@ -193,7 +193,8 @@ apt-get install -yq \
 if [ $MDB_CLUSTER_SIZE != 'SINGLE' ] && [ $MDB_CLUSTER_SIZE -gt 1 ]; then
     mkdir -p /var/lib/columnstore
     chown -R mysql:mysql /var/lib/columnstore
-    for i in {1..${MDB_CLUSTER_SIZE}} do
+    for i in {1..${MDB_CLUSTER_SIZE}}
+    do
         ln -s /mnt/columnstore/data${i} /var/lib/columnstore/data${i}
     done
 fi
