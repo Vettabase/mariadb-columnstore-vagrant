@@ -29,7 +29,7 @@ elif [[ $1 == 'SINGLE' ]]
 then
     NODE_NUMBER=1
 else
-    NODE_NUMBER=${2}
+    NODE_NUMBER=${1}
 fi
 
 if [[ $MDB_CLUSTER_SIZE != 'SINGLE' ]]
@@ -190,12 +190,14 @@ apt-get install -yq \
     tzdata \
     jq
 
-if [ $MDB_CLUSTER_SIZE != 'SINGLE' ] || [ $MDB_CLUSTER_SIZE -gt 1 ]; then
+if [ $MDB_CLUSTER_SIZE != 'SINGLE' ] && [ $MDB_CLUSTER_SIZE -gt 1 ]; then
     DATA_DIR="/data/data${NODE_NUMBER}"
     LN_DIR="/var/lib/columnstore/data${NODE_NUMBER}"
-    mkdir -p  ${DATA_DIR}
+
+    mkdir -p /var/lib/columnstore
+    mkdir -p ${DATA_DIR}
     ln -s ${DATA_DIR} ${LN_DIR}
-    chown -R mysql:mysql ${LN_DIR}
+    chown -R mysql:mysql /var/lib/columnstore
 fi
 
 
@@ -221,7 +223,7 @@ systemctl stop mariadb-columnstore
 #     - Enable CMAPI logs
 #     - Generate a CMAPI key if needed
 #     - Restart CMAPI again to make config changes effective
-if [ $MDB_CLUSTER_SIZE != 'SINGLE' ] || [ $MDB_CLUSTER_SIZE -gt 1 ]; then
+if [ $MDB_CLUSTER_SIZE != 'SINGLE' ] && [ $MDB_CLUSTER_SIZE -gt 1 ]; then
     apt-get install -yq \
         mariadb-columnstore-cmapi \
     

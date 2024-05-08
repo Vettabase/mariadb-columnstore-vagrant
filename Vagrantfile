@@ -13,7 +13,7 @@ Vagrant.configure("2") do |config|
   config.vm.synced_folder "sync", "/vagrant", type: "nfs",
     nfs_udp: false, nfs_version: 4
   config.vm.synced_folder "data", "/data", type: "nfs",
-    nfs_udp: false, nfs_version: 4, mount_options: ["rw", "sync", "no_subtree_check"]
+    nfs_udp: false, nfs_version: 4, mount_options: ["rw", "sync"]
 
   1.upto(cluster_size) do |i|
       vm_id = "cs#{i}"
