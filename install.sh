@@ -191,30 +191,11 @@ apt-get install -yq \
     jq
 
 if [ $MDB_CLUSTER_SIZE != 'SINGLE' ] || [ $MDB_CLUSTER_SIZE -gt 1 ]; then
-    sudo apt-get install -yq \
-        nfs-kernel-server \
-        nfs-common
-
-    for i in {1..${MDB_CLUSTER_SIZE}}
-    do
-        mkdir -p /var/lib/columnstore/data${i}
-        chown -R mysql:mysql /var/lib/columnstore/data${i}
-    done
-
-    LDATA="/var/lib/columnstore/data${NODE_NUMBER}"
-
-    echo "${LDATA} *(rw,sync,no_subtree_check)" >> /etc/exports
-    exportfs -a
-    systemctl restart nfs-kernel-server
-
-    for i in {1..${MDB_CLUSTER_SIZE}}
-    do
-        if [[ ! i -eq ${NODE_NUMBER} ]]
-        then
-            RDATA=/var/lib/columnstore/data${i}
-            mount -t nfs 192.168.50.1${i}:${RDATA} ${RDATA}
-        fi
-    done
+    DATA_DIR="/data/data${NODE_NUMBER}"
+    LN_DIR="/var/lib/columnstore/data${NODE_NUMBER}"
+    mkdir -p  ${DATA_DIR}
+    ln -s ${DATA_DIR} ${LN_DIR}
+    chown -R mysql:mysql ${LN_DIR}
 fi
 
 

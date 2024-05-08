@@ -3,5 +3,4 @@ config.sh
 **/*.box
 boot/
 usr/
-data*/
-data/
+data/*

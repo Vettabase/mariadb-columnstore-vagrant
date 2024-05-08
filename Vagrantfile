@@ -10,8 +10,10 @@ end
 
 Vagrant.configure("2") do |config|
   config.vm.box = ENV['BOX'] || "generic/ubuntu2204"
-  config.vm.synced_folder ".sync", "/vagrant", type: "nfs",
+  config.vm.synced_folder "sync", "/vagrant", type: "nfs",
     nfs_udp: false, nfs_version: 4
+  config.vm.synced_folder "data", "/data", type: "nfs",
+    nfs_udp: false, nfs_version: 4, mount_options: ["rw", "sync", "no_subtree_check"]
 
   1.upto(cluster_size) do |i|
       vm_id = "cs#{i}"
