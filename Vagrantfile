@@ -12,10 +12,15 @@ Vagrant.configure("2") do |config|
   config.vm.box = ENV['BOX'] || "generic/ubuntu2204"
   config.vm.synced_folder "sync", "/vagrant", type: "nfs",
     nfs_udp: false, nfs_version: 4
-  config.vm.synced_folder "data", "/data", type: "nfs",
+  config.vm.synced_folder "columnstore", "/mnt/columnstore", type: "nfs",
     nfs_udp: false, nfs_version: 4, mount_options: ["rw", "sync"]
+  
 
-  1.upto(cluster_size) do |i|
+  (1..cluster_size).each do |i|
+    system("mkdir -p columnstore/data#{i}")
+  end
+
+  (1..cluster_size).each do |i|
       vm_id = "cs#{i}"
       config.vm.define vm_id do |node|
         config.vm.post_up_message = (

@@ -191,13 +191,11 @@ apt-get install -yq \
     jq
 
 if [ $MDB_CLUSTER_SIZE != 'SINGLE' ] && [ $MDB_CLUSTER_SIZE -gt 1 ]; then
-    DATA_DIR="/data/data${NODE_NUMBER}"
-    LN_DIR="/var/lib/columnstore/data${NODE_NUMBER}"
-
     mkdir -p /var/lib/columnstore
-    mkdir -p ${DATA_DIR}
-    ln -s ${DATA_DIR} ${LN_DIR}
     chown -R mysql:mysql /var/lib/columnstore
+    for i in {1..${MDB_CLUSTER_SIZE}} do
+        ln -s /mnt/columnstore/data${i} /var/lib/columnstore/data${i}
+    done
 fi
 
 
