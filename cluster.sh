@@ -37,12 +37,17 @@ get_key() {
     fi
 }
 
+print_key() {
+    k=$(get_key)
+    echo $k
+}
+
 set_key() {
     k=$(get_key)
     curl -k -s -X PUT https://${PRIMARY_IP}:8640/cmapi/0.4.0/cluster/node \
-    --header 'Content-Type:application/json' \
+    --header "Content-Type:application/json" \
     --header "x-api-key:${k}" \
-    --data '{"timeout":120, "node": "${PRIMARY_IP}"}' \
+    --data "{\"timeout\":120, "node": \"${PRIMARY_IP}\"}" \
     | jq .
 }
 
@@ -51,13 +56,13 @@ status() {
     if [[ -z $1 ]]
     then
         curl -k -s https://${PRIMARY_IP}:8640/cmapi/0.4.0/cluster/status \
-        --header 'Content-Type:application/json' \
+        --header "Content-Type:application/json" \
         --header "x-api-key:${k}" \
         | jq .
     else
         curl -k -s https://${1}:8640/cmapi/0.4.0/cluster/status \
-        --header 'Content-Type:application/json' \
-        --header 'x-api-key:${k}' \
+        --header "Content-Type:application/json" \
+        --header "x-api-key:${k}" \
         | jq . 
     fi
 }
@@ -70,9 +75,9 @@ add() {
     fi
     k=$(get_key)
     curl -k -s -X PUT https://${PRIMARY_IP}:8640/cmapi/0.4.0/cluster/node \
-    --header 'Content-Type:application/json' \
+    --header "Content-Type:application/json" \
     --header "x-api-key:${k}" \
-    --data '{"timeout":120, "node": "${1}"}' \
+    --data "{\"timeout\":120, "node": \"${1}\"}" \
     | jq .
 }
 
