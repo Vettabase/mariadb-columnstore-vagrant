@@ -29,8 +29,8 @@ gen_key() {
 get_key() {
     if [[ -e ${CMAPI_FILE} ]]
     then
-        cmapi_key=$(cat ${CMAPI_FILE})
-        return $cmapi_key
+        echo $(cat ${CMAPI_FILE})
+        exit 0
     else
         echo "ERROR missing cmapi key file at ${CMAPI_FILE}"
         exit 1
@@ -38,9 +38,7 @@ get_key() {
 }
 
 set_key() {
-    gen_key
-    get_key
-    k=$?
+    k=$(get_key)
     curl -k -s -X PUT https://${PRIMARY_IP}:8640/cmapi/0.4.0/cluster/node \
     --header 'Content-Type:application/json' \
     --header "x-api-key:${k}" \
@@ -49,18 +47,17 @@ set_key() {
 }
 
 status() {
-    get_key
-    k=$?
+    k=$(get_key)
     if [[ -z $1 ]]
     then
-        curl -k -s https://mcs1:8640/cmapi/0.4.0/cluster/status \
+        curl -k -s https://${PRIMARY_IP}:8640/cmapi/0.4.0/cluster/status \
         --header 'Content-Type:application/json' \
         --header "x-api-key:${k}" \
         | jq .
     else
         curl -k -s https://${1}:8640/cmapi/0.4.0/cluster/status \
         --header 'Content-Type:application/json' \
-        --header "x-api-key:${k}" \
+        --header 'x-api-key:${k}' \
         | jq . 
     fi
 }
@@ -71,8 +68,7 @@ add() {
         echo "Need an ip address"
         exit 1
     fi
-    get_key
-    k=$?
+    k=$(get_key)
     curl -k -s -X PUT https://${PRIMARY_IP}:8640/cmapi/0.4.0/cluster/node \
     --header 'Content-Type:application/json' \
     --header "x-api-key:${k}" \
@@ -90,6 +86,10 @@ case $local_cmd in
         status "$@" ;;
     set)
         set_key ;;
+    get)
+        print_key ;;
+    gen)
+        gen_key ;;
     ip)
         echo $PRIMARY_IP ;;
     restart-cmapi)
