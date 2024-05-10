@@ -177,125 +177,146 @@ mariadb_configure_custom_sql() {
     fi
 }
 
-groupadd -r mysql && useradd -r -g mysql mysql --home-dir /var/lib/mysql
+install_base() {
+    apt-get update -yq
+    apt-get install -yq \
+        apt-transport-https \
+        curl \
+        pwgen \
+        ca-certificates \
+        gpg \
+        tzdata \
+        jq
+}
 
-apt-get update -yq
-#apt-get upgrade -yq
-apt-get install -yq \
-    apt-transport-https \
-    curl \
-    pwgen \
-    ca-certificates \
-    gpg \
-    tzdata \
-    jq
+preconfig () {
+    sysctl vm.swappiness=$OS_SWAPPINESS
+    echo $OS_SWAPPINESS > /proc/sys/vm/swappiness
+    echo "vm.swappiness=$OS_SWAPPINESS" >> $( ls -1 /etc/sysctl.d/*.conf | tail -1 )
 
-if [ $MDB_CLUSTER_SIZE != 'SINGLE' ] && [ $MDB_CLUSTER_SIZE -gt 1 ]; then
-    mkdir -p /var/lib/columnstore
-    chown -R mysql:mysql /var/lib/columnstore
-    for i in {1..${MDB_CLUSTER_SIZE}}
-    do
-        ln -s /mnt/columnstore/data${i} /var/lib/columnstore/data${i}
-    done
-fi
+    # make scripts in utils/ easily available for later use
+    echo 'PATH="${PATH}":/vagrant/utils' > /etc/profile.d/vagrant_profile.sh
+
+    groupadd -r mysql && useradd -r -g mysql mysql --home-dir /var/lib/mysql
+}
 
 
-REPO_URL="deb [signed-by=/etc/apt/keyrings/mariadb-keyring.pgp] https://deb.mariadb.org/${MDB_VERSION}/ubuntu ${OS_CODENAME} main"
-REPO_FILE="/etc/apt/sources.list.d/mariadb.list"
-mkdir -p /etc/apt-get/keyrings
-curl -o /etc/apt/keyrings/mariadb-keyring.pgp 'https://mariadb.org/mariadb_release_signing_key.pgp'
-echo ${REPO_URL} > ${REPO_FILE}
-apt-get update -yq
-apt-get install -yq \
-    mariadb-server \
-    mariadb-backup \
-    mariadb-plugin-columnstore \
-    mariadb-plugin-s3
+install_mariadb() {
+    REPO_URL="deb [signed-by=/etc/apt/keyrings/mariadb-keyring.pgp] https://deb.mariadb.org/${MDB_VERSION}/ubuntu ${OS_CODENAME} main"
+    REPO_FILE="/etc/apt/sources.list.d/mariadb.list"
+    KEY_FILE=/etc/apt/keyrings/mariadb-keyring.pgp
+    mkdir -p /etc/apt-get/keyrings
+    if [[ ! -f ${KEY_FILE} ]]
+    then
+        curl -o ${KEY_FILE} 'https://mariadb.org/mariadb_release_signing_key.pgp'
+    fi
+    if [[ ! -f ${REPO_FILE} ]]
+    then
+        echo ${REPO_URL} > ${REPO_FILE}
+    fi
+    apt-get update -yq
+    apt-get install -yq \
+        mariadb-server \
+        mariadb-backup \
+        mariadb-plugin-columnstore \
+        mariadb-plugin-s3
 
-systemctl stop mariadb
-systemctl stop mariadb-columnstore
+    if  [[ $MDB_ALLOW_REMOTE_CONNECTIONS == 1 ]]
+    then
+        CS_CNF_BIND_ADDRESS="bind_address=0.0.0.0"
+    else
+        CS_CNF_BIND_ADDRESS="bind_address=127.0.0.1"
+    fi
 
-# MDB_CLUSTER_SIZE = 'SINGLE' excludes CMAPI.
+	CS_CNF="/etc/mysql/mariadb.conf.d/99_cs.cnf"
+    echo "[mariadbd]" > $CS_CNF
+    echo $CS_CNF_BIND_ADDRESS >> $CS_CNF
+    echo "log_error=mariadbd.err" >> $CS_CNF
+    echo "character_set_server= utf8" >> $CS_CNF
+    echo "collation_server= utf8_general_ci" >> $CS_CNF
+    echo "log_bin= mariadb-bin" >> $CS_CNF
+    echo "log_bin_index= mariadb-bin.index" >> $CS_CNF
+    echo "relay_log= mariadb-relay" >> $CS_CNF
+    echo "relay_log_index= mariadb-relay.index" >> $CS_CNF
+    echo "log_slave_updates= ON" >> $CS_CNF
+    echo "gtid_strict_mode= ON" >> $CS_CNF
+    echo "server_id=${NODE_NUMBER}" >> $CS_CNF
+
+    systemctl restart mariadb
+    systemctl restart mariadb-columnstore
+    
+    . /vagrant/utils/timezones-load.sh
+
+}
+
+install_cmapi() {
+# MDB_CLUSTER_SIZE = 1 excludes CMAPI.
 # In other cases:
 #     - Install CMPAI
 #     - Enable and restart both MariaDB and CMAPI services
 #     - Enable CMAPI logs
 #     - Generate a CMAPI key if needed
 #     - Restart CMAPI again to make config changes effective
-if [ $MDB_CLUSTER_SIZE != 'SINGLE' ] && [ $MDB_CLUSTER_SIZE -gt 1 ]; then
-    apt-get install -yq \
-        mariadb-columnstore-cmapi \
-    
-    systemctl enable mariadb
-    systemctl enable mariadb-columnstore-cmapi
-    systemctl restart mariadb
-    systemctl restart mariadb-columnstore-cmapi
+    if [ $MDB_CLUSTER_SIZE -gt 1 ]; then
+        systemctl stop mariadb
+        systemctl stop mariadb-columnstore
+        apt-get install -yq mariadb-columnstore-cmapi
+        
+        systemctl enable mariadb
+        systemctl enable mariadb-columnstore-cmapi
+        systemctl restart mariadb
+        systemctl restart mariadb-columnstore-cmapi
 
-    CMAPI_CONFIG_FILE=/etc/columnstore/cmapi_server.conf
-    sed -i "s|^log.access_file.*|log.access_file = '/var/lib/columnstore/cs.access.log'|" $CMAPI_CONFIG_FILE
-    sed -i "s|^log.error_file.*|log.error_file = '/var/lib/columnstore/cs.error.log'|" $CMAPI_CONFIG_FILE
-    if [ -z "$MDB_CMAPI_KEY" ]; then
-        MDB_CMAPI_KEY=$( openssl rand -hex 32 )
+        CMAPI_CONFIG_FILE=/etc/columnstore/cmapi_server.conf
+        sed -i "s|^log.access_file.*|log.access_file = '/var/lib/columnstore/cs.access.log'|" $CMAPI_CONFIG_FILE
+        sed -i "s|^log.error_file.*|log.error_file = '/var/lib/columnstore/cs.error.log'|" $CMAPI_CONFIG_FILE
+        if [ -z "$MDB_CMAPI_KEY" ]; then
+            MDB_CMAPI_KEY=$( openssl rand -hex 32 )
+        fi
+        mcs cluster set api-key --key "$MDB_CMAPI_KEY"
+
+        # previous changes require restart
+        systemctl restart mariadb-columnstore-cmapi
     fi
-    mcs cluster set api-key --key "$MDB_CMAPI_KEY"
+}
 
-    # previous changes require restart
-    systemctl restart mariadb-columnstore-cmapi
-fi
+mariadb_install_engines() {
+    # MDB_EXTRA_ENGINES os a comma-separated list of engines to install.
+    # We wrap it with additional commas to avoid confusion if an engine name
+    # is contained in another, which currenlty is the case for FEDERATED/FEDERATEDX.
+    if [[ $MDB_EXTRA_ENGINES == 'ALL' ]]; then
+        MDB_EXTRA_ENGINES=',CONNECT,MROONGA,OQGRAPH,SPIDER,ARCHIVE,BLACKHOLE,FEDERATEDX,'
+    else
+        MDB_EXTRA_ENGINES=$(echo $MDB_EXTRA_ENGINES | tr -d ' ')
+        MDB_EXTRA_ENGINES=",$MDB_EXTRA_ENGINES,"
+        MDB_EXTRA_ENGINES=$(echo "$MDB_EXTRA_ENGINES" | tr '[:lower:]' '[:upper:]')
+    fi
+    # plugins that are in the plugin_dir but not installed
+    [[ $MDB_EXTRA_ENGINES == *",CONNECT,"* ]]     && apt-get install -yq mariadb-plugin-connect
+    [[ $MDB_EXTRA_ENGINES == *",MROONGA,"* ]]     && apt-get install -yq mariadb-plugin-mroonga
+    [[ $MDB_EXTRA_ENGINES == *",OQGRAPH,"* ]]     && apt-get install -yq mariadb-plugin-oqgraph
+    [[ $MDB_EXTRA_ENGINES == *",SPIDER,"* ]]      && apt-get install -yq mariadb-plugin-spider
+    # plugins that need be installed from a separate package
+    [[ $MDB_EXTRA_ENGINES == *",ARCHIVE,"* ]]     && mariadb -e "INSTALL SONAME 'ha_archive';"
+    [[ $MDB_EXTRA_ENGINES == *",BLACKHOLE,"* ]]   && mariadb -e "INSTALL SONAME 'ha_blackhole';"
+    [[ $MDB_EXTRA_ENGINES == *",FEDERATED,"* ]]   && mariadb -e "INSTALL SONAME 'ha_federated';"
+    [[ $MDB_EXTRA_ENGINES == *",FEDERATEDX,"* ]]  && mariadb -e "INSTALL SONAME 'ha_federatedx';"
+}
 
-# MDB_EXTRA_ENGINES os a comma-separated list of engines to install.
-# We wrap it with additional commas to avoid confusion if an engine name
-# is contained in another, which currenlty is the case for FEDERATED/FEDERATEDX.
-if [[ $MDB_EXTRA_ENGINES == 'ALL' ]]; then
-    MDB_EXTRA_ENGINES=',CONNECT,MROONGA,OQGRAPH,SPIDER,ARCHIVE,BLACKHOLE,FEDERATEDX,'
-else
-    MDB_EXTRA_ENGINES=$(echo $MDB_EXTRA_ENGINES | tr -d ' ')
-    MDB_EXTRA_ENGINES=",$MDB_EXTRA_ENGINES,"
-    MDB_EXTRA_ENGINES=$(echo "$MDB_EXTRA_ENGINES" | tr '[:lower:]' '[:upper:]')
-fi
-# plugins that are in the plugin_dir but not installed
-[[ $MDB_EXTRA_ENGINES == *",CONNECT,"* ]]     && apt-get install -yq mariadb-plugin-connect
-[[ $MDB_EXTRA_ENGINES == *",MROONGA,"* ]]     && apt-get install -yq mariadb-plugin-mroonga
-[[ $MDB_EXTRA_ENGINES == *",OQGRAPH,"* ]]     && apt-get install -yq mariadb-plugin-oqgraph
-[[ $MDB_EXTRA_ENGINES == *",SPIDER,"* ]]      && apt-get install -yq mariadb-plugin-spider
-# plusing that need be installed from a separate package
-[[ $MDB_EXTRA_ENGINES == *",ARCHIVE,"* ]]     && mariadb -e "INSTALL SONAME 'ha_archive';"
-[[ $MDB_EXTRA_ENGINES == *",BLACKHOLE,"* ]]   && mariadb -e "INSTALL SONAME 'ha_blackhole';"
-[[ $MDB_EXTRA_ENGINES == *",FEDERATED,"* ]]   && mariadb -e "INSTALL SONAME 'ha_federated';"
-[[ $MDB_EXTRA_ENGINES == *",FEDERATEDX,"* ]]  && mariadb -e "INSTALL SONAME 'ha_federatedx';"
-
-# Run config
-mariadb_configure_columnstore
-mariadb_configure_s3
+install_base
+preconfig
+install_mariadb
+mariadb_install_engines
+#install_cmapi
+#mariadb_configure_columnstore
+#mariadb_configure_s3
 mariadb_configure_custom_sql
-. /vagrant/utils/timezones-load.sh
 
-# make config changes that require restart, then restart if necessary
-CONF_FILE=/etc/mysql/my.cnf
-NEED_RESTART=0
-echo ''                          >> $CONF_FILE
-echo '[server]'                  >> $CONF_FILE
-if [ $MDB_ALLOW_REMOTE_CONNECTIONS == 1 ]; then
-    echo 'bind_address=0.0.0.0'  >> $CONF_FILE
-    NEED_RESTART=1
-fi
-echo ''                          >> $CONF_FILE
-
-if [ $NEED_RESTART == 1 ]; then
-    systemctl restart mariadb
-fi
 
 if [ $OS_INSTALL_MYCLI == 1 ]; then
     . /vagrant/utils/mycli-install.sh
 fi
 
-# make scripts in utils/ easily available for later use
-echo 'PATH=$PATH:/vagrant/utils' >> /etc/profile
-
-# set vm.swappiness specified value and persist it
-sysctl vm.swappiness=$OS_SWAPPINESS
-echo $OS_SWAPPINESS > /proc/sys/vm/swappiness
-echo "vm.swappiness=$OS_SWAPPINESS" >> $( ls -1 /etc/sysctl.d/*.conf | tail -1 )
 
 echo '<------------------------------->
 <   MariaDB ColumnStore Image   >

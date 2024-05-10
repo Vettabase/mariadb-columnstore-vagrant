@@ -1,29 +1,27 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-cluster_size = ENV['MDB_CLUSTER_SIZE'] || 1
-if cluster_size.to_s == 'SINGLE'
-  cluster_size = 1
+if ENV['MDB_CLUSTER_SIZE']
+  cluster_size = ENV['MDB_CLUSTER_SIZE'].to_i
 else
-  cluster_size = cluster_size.to_i
+  cluster_size = 3
 end
 
 Vagrant.configure("2") do |config|
   config.vm.box = ENV['BOX'] || "generic/ubuntu2204"
   config.vm.synced_folder "sync", "/vagrant", type: "nfs",
     nfs_udp: false, nfs_version: 4
-  config.vm.synced_folder "columnstore", "/mnt/columnstore", type: "nfs",
-    nfs_udp: false, nfs_version: 4, mount_options: ["rw", "sync"]
   
-
-  (1..cluster_size).each do |i|
-    system("mkdir -p columnstore/data#{i}")
+  1.upto(cluster_size) do |i|
+    system('mkdir', '-p', "columnstore/data#{i}")
+    config.vm.synced_folder "columnstore/data#{i}", "/var/lib/columnstore/data#{i}", type: "nfs",
+      nfs_udp: false, nfs_version: 4, mount_options: ["rw", "sync"]
   end
 
-  (1..cluster_size).each do |i|
+  1.upto(cluster_size) do |i|
       vm_id = "cs#{i}"
       config.vm.define vm_id do |node|
-        config.vm.post_up_message = (
+        node.vm.post_up_message = (
             "<------------------------------->\n" +
             "<   MariaDB ColumnStore Image   >\n" +
             "<     by Vettabasse             >\n" +
@@ -37,17 +35,17 @@ Vagrant.configure("2") do |config|
         )
 
         node.vm.network "private_network", ip:"192.168.50.1#{i}"
-        config.vm.hostname = vm_id
+        node.vm.hostname = vm_id
         node.vm.provision "shell", privileged: true, path: "install.sh", args: "#{i}",
             env: {
                 'OS_CODENAME' => ENV['OS_CODENAME'] || 'jammy',
                 'OS_SWAPPINESS' => ENV['OS_SWAPPINESS'] || 1,
-                'OS_INSTALL_MYCLI' => ENV['OS_INSTALL_MYCLI'] || 1,
+                'OS_INSTALL_MYCLI' => ENV['OS_INSTALL_MYCLI'] || 0,
                 'MDB_EXTRA_ENGINES' => ENV['MDB_EXTRA_ENGINES'] || 'CONNECT,SPIDER,BLACKHOLE',
                 'MDB_VERSION' => ENV['MDB_VERSION'] || '11.3',
                 'MDB_CMAPI_KEY' => ENV['MDB_CMAPI_KEY'],
                 'MDB_ALLOW_REMOTE_CONNECTIONS' => ENV['MDB_ALLOW_REMOTE_CONNECTIONS'] || 1,
-                'MDB_CLUSTER_SIZE' => ENV['MDB_CLUSTER_SIZE'] || 'SINGLE'
+                'MDB_CLUSTER_SIZE' => ENV['MDB_CLUSTER_SIZE'] || cluster_size
             }
     end
   end
