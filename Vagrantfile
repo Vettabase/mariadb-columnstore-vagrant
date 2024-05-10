@@ -51,7 +51,7 @@ Vagrant.configure("2") do |config|
                 'MDB_VERSION' => ENV['MDB_VERSION'] || '11.3',
                 'MDB_CMAPI_KEY' => ENV['MDB_CMAPI_KEY'],
                 'MDB_ALLOW_REMOTE_CONNECTIONS' => ENV['MDB_ALLOW_REMOTE_CONNECTIONS'] || 1,
-                'MDB_CLUSTER_SIZE' => ENV['MDB_CLUSTER_SIZE'] || cluster_size
+                'MDB_CLUSTER_SIZE' => ENV['MDB_CLUSTER_SIZE'] || cluster_size,
                 'MDB_MASTER_HOST' => ENV['MDB_MASTER_HOST'] || master_ip
             }
     end

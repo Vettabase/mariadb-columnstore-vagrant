@@ -18,19 +18,12 @@ restart_mariadb() {
     cmd $1 "system restart mariadb"
 }
 
-set_key() {
+gen_key() {
     if [[ ! -e ${CMAPI_FILE} ]]
     then
         cmapi_key=$(openssl rand -hex 32)
         echo $cmapi_key > ${CMAPI_FILE}
-    else
-        cmapi_key=$(cat ${CMAPI_FILE})
     fi
-    curl -k -s -X PUT https://${PRIMARY_IP}:8640/cmapi/0.4.0/cluster/node \
-    --header 'Content-Type:application/json' \
-    --header "x-api-key:${cmapi_key}" \
-    --data '{"timeout":120, "node": "${PRIMARY_IP}"}' \
-    | jq .
 }
 
 get_key() {
@@ -42,6 +35,17 @@ get_key() {
         echo "ERROR missing cmapi key file at ${CMAPI_FILE}"
         exit 1
     fi
+}
+
+set_key() {
+    gen_key
+    get_key
+    k=$?
+    curl -k -s -X PUT https://${PRIMARY_IP}:8640/cmapi/0.4.0/cluster/node \
+    --header 'Content-Type:application/json' \
+    --header "x-api-key:${k}" \
+    --data '{"timeout":120, "node": "${PRIMARY_IP}"}' \
+    | jq .
 }
 
 status() {
