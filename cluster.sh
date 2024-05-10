@@ -47,7 +47,7 @@ set_key() {
     curl -k -s -X PUT https://${PRIMARY_IP}:8640/cmapi/0.4.0/cluster/node \
     --header "Content-Type:application/json" \
     --header "x-api-key:${k}" \
-    --data "{\"timeout\":120, "node": \"${PRIMARY_IP}\"}" \
+    --data "{\"timeout\":15, \"node\": \"${PRIMARY_IP}\"}" \
     | jq .
 }
 
@@ -73,11 +73,12 @@ add() {
         echo "Need an ip address"
         exit 1
     fi
+    echo "Adding ${1}"
     k=$(get_key)
     curl -k -s -X PUT https://${PRIMARY_IP}:8640/cmapi/0.4.0/cluster/node \
     --header "Content-Type:application/json" \
     --header "x-api-key:${k}" \
-    --data "{\"timeout\":120, "node": \"${1}\"}" \
+    --data "{\"timeout\":15, \"node\": \"${1}\"}" \
     | jq .
 }
 
