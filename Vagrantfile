@@ -7,6 +7,10 @@ else
   cluster_size = 3
 end
 
+first_ip = 10
+private_ip = '192.168.50'
+master_ip = "#${private_ip}.#{first_ip+1}"
+
 Vagrant.configure("2") do |config|
   config.vm.box = ENV['BOX'] || "generic/ubuntu2204"
   config.vm.synced_folder "sync", "/vagrant", type: "nfs",
@@ -34,7 +38,9 @@ Vagrant.configure("2") do |config|
             "https://vettabase.com\n"
         )
 
-        node.vm.network "private_network", ip:"192.168.50.1#{i}"
+        node.vm.network "private_network", ip:"192.168.50.1#{i}" "#{private_ip}.#{first_ip+i}"
+        node.vm.network "forwarded_port", guest: 3306, host: 3308
+        node.vm.network "forwarded_port", guest: 8640, host: 8640 
         node.vm.hostname = vm_id
         node.vm.provision "shell", privileged: true, path: "install.sh", args: "#{i}",
             env: {
@@ -46,6 +52,7 @@ Vagrant.configure("2") do |config|
                 'MDB_CMAPI_KEY' => ENV['MDB_CMAPI_KEY'],
                 'MDB_ALLOW_REMOTE_CONNECTIONS' => ENV['MDB_ALLOW_REMOTE_CONNECTIONS'] || 1,
                 'MDB_CLUSTER_SIZE' => ENV['MDB_CLUSTER_SIZE'] || cluster_size
+                'MDB_MASTER_HOST' => ENV['MDB_MASTER_HOST'] || master_ip
             }
     end
   end
