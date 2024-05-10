@@ -38,7 +38,7 @@ mariadb_configure_columnstore() {
 	mcsSetConfig CrossEngineSupport User ${JOIN_USER}
 	mcsSetConfig CrossEngineSupport Password ${JOIN_PASS}
 	mcsSetConfig CrossEngineSupport host "127.0.0.1"
-    mariadb -e "CREATE USER '${JOIN_USER}'@'127.0.0.1' IDENTIFIED BY '${JOIN_PASS}'"
+    mariadb -e "CREATE USER IF NOT EXISTS '${JOIN_USER}'@'127.0.0.1' IDENTIFIED BY '${JOIN_PASS}'"
     mariadb -e "GRANT SELECT,PROCESS ON *.* TO '${JOIN_USER}'@'127.0.0.1'"
 }
 
@@ -137,28 +137,28 @@ install_cmapi() {
 #     - Enable CMAPI logs
 #     - Restart CMAPI again to make config changes effective
     if [ $MDB_CLUSTER_SIZE -gt 1 ]; then
-        mariadb -e "CREATE USER '${REPL_USER}'@'%' IDENTIFIED BY '${REPL_PASS}'"
+        mariadb -e "CREATE USER IF NOT EXISTS '${REPL_USER}'@'%' IDENTIFIED BY '${REPL_PASS}'"
         mariadb -e "GRANT ${REPL_GRANTS} ON *.* TO '${REPL_USER}'@'%'"
 
         systemctl stop mariadb
         systemctl stop mariadb-columnstore
 
         apt-get install -yq mariadb-columnstore-cmapi
-        
         systemctl enable mariadb-columnstore-cmapi
-        systemctl restart mariadb
-        systemctl restart mariadb-columnstore-cmapi
-
+    
         CMAPI_CONFIG_FILE=/etc/columnstore/cmapi_server.conf
         sed -i "s|^log.access_file.*|log.access_file = '/var/lib/columnstore/cs.access.log'|" $CMAPI_CONFIG_FILE
         sed -i "s|^log.error_file.*|log.error_file = '/var/lib/columnstore/cs.error.log'|" $CMAPI_CONFIG_FILE
 
         # previous changes require restart
+        systemctl restart mariadb
         systemctl restart mariadb-columnstore-cmapi
 
         if [[ ${NODE_NUMBER} -gt 1 ]]
         then
-            mariadb -e "CHANGE MASTER TO MASTER_HOST='${MASTER_HOST}',MASTER_USER='${REPL_USER}',MASTER_PASSWORD='${REPL_PASS}',MASTER_USER_GTID=slave_pos"
+            mariadb -e "STOP SLAVE"
+            mariadb -e "CHANGE MASTER TO MASTER_HOST='${MDB_MASTER_HOST}',MASTER_USER='${REPL_USER}',MASTER_PASSWORD='${REPL_PASS}',MASTER_USE_GTID=slave_pos;"
+            mariadb -e "START SLAVE"
             mariadb -e "SET GLOBAL read_only=ON"
         fi
     fi

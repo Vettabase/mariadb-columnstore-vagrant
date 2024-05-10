@@ -9,7 +9,7 @@ end
 
 first_ip = 10
 private_ip = '192.168.50'
-master_ip = "#${private_ip}.#{first_ip+1}"
+master_ip = "#{private_ip}.#{first_ip+1}"
 
 Vagrant.configure("2") do |config|
   config.vm.box = ENV['BOX'] || "generic/ubuntu2204"
@@ -38,7 +38,7 @@ Vagrant.configure("2") do |config|
             "https://vettabase.com\n"
         )
 
-        node.vm.network "private_network", ip:"192.168.50.1#{i}" "#{private_ip}.#{first_ip+i}"
+        node.vm.network "private_network", ip: "#{private_ip}.#{first_ip+i}"
         node.vm.network "forwarded_port", guest: 3306, host: 3308
         node.vm.network "forwarded_port", guest: 8640, host: 8640 
         node.vm.hostname = vm_id
