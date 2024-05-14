@@ -108,6 +108,11 @@ install_mariadb() {
         CS_CNF_BIND_ADDRESS="bind_address=127.0.0.1"
     fi
 
+    if [[ -e /vagrant/custom.cnf ]]
+    then
+        cp /vagrant/custom.cnf /etc/mysql/mariadn.conf.d/custom.cnf
+    fi
+
 	CS_CNF="/etc/mysql/mariadb.conf.d/99_cs.cnf"
     echo "[mariadbd]" > $CS_CNF
     echo $CS_CNF_BIND_ADDRESS >> $CS_CNF
@@ -133,7 +138,7 @@ install_mariadb() {
 }
 
 install_cmapi() {
-# MDB_CLUSTER_SIZE = 1 excludes CMAPI.
+# MDB_CLUSTER_SIZE = 'SINGLE' or 1, excludes CMAPI.
 # In other cases:
 #     - Install CMPAI
 #     - Enable and restart both MariaDB and CMAPI services

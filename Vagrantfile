@@ -2,7 +2,11 @@
 # vi: set ft=ruby :
 
 if ENV['MDB_CLUSTER_SIZE']
-  cluster_size = ENV['MDB_CLUSTER_SIZE'].to_i
+  if ENV['MDB_CLUSTER_SIZE'] == 'SINGLE'
+    cluster_size = 1
+  else
+    cluster_size = ENV['MDB_CLUSTER_SIZE'].to_i
+  end
 else
   cluster_size = 3
 end
@@ -47,7 +51,6 @@ Vagrant.configure("2") do |config|
                 'OS_INSTALL_MYCLI' => ENV['OS_INSTALL_MYCLI'] || 0,
                 'MDB_EXTRA_ENGINES' => ENV['MDB_EXTRA_ENGINES'] || 'CONNECT,SPIDER,BLACKHOLE',
                 'MDB_VERSION' => ENV['MDB_VERSION'] || '11.3',
-                'MDB_CMAPI_KEY' => ENV['MDB_CMAPI_KEY'],
                 'MDB_ALLOW_REMOTE_CONNECTIONS' => ENV['MDB_ALLOW_REMOTE_CONNECTIONS'] || 1,
                 'MDB_CLUSTER_SIZE' => ENV['MDB_CLUSTER_SIZE'] || cluster_size,
                 'MDB_MASTER_HOST' => ENV['MDB_MASTER_HOST'] || primary_ip
