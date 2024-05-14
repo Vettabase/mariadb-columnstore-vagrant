@@ -76,6 +76,9 @@ preconfig () {
     echo 'PATH="${PATH}":/vagrant/utils' > /etc/profile.d/vagrant_profile.sh
 
     groupadd -r mysql && useradd -r -g mysql mysql --home-dir /var/lib/mysql
+    systemctl disable apparmor
+    ufw disable
+    localedef -i en_US -f UTF-8 en_US.UTF-8
 }
 
 
