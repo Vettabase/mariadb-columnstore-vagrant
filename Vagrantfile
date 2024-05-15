@@ -8,7 +8,7 @@ if ENV['MDB_CLUSTER_SIZE']
     cluster_size = ENV['MDB_CLUSTER_SIZE'].to_i
   end
 else
-  cluster_size = 3
+  cluster_size = 1
 end
 
 first_ip = 10
