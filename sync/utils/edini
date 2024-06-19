@@ -1,0 +1,125 @@
+#!/usr/bin/env python3
+"""
+    edini
+    Author: Richard Bensley (github.com/rcbensley)
+    Updated: 22/03/2021
+"""
+
+import os
+import sys
+import argparse
+import configparser
+
+
+def add(path: str, encoding: str, section: str, keys: dict):
+    """Add options to a config section"""
+    cfg = configparser.ConfigParser(allow_no_value=True, strict=False)
+    cfg.optionxform=str
+    cfg.read(path)
+
+    if not cfg.has_section(section):
+        print(f"Adding section [{section}] to {path}")
+        cfg.add_section(section)
+    for k, v in keys.items():
+        print(f"Adding {k}={v} to [{section}] in {path}")
+        cfg.set(section, k, v)
+
+    with open(path, "w", encoding=encoding) as f:
+        print(f"Writing changes to config at {path}")
+        cfg.write(f,space_around_delimiters=False)
+
+
+def rm(path, encoding, section, keys):
+    """Remove options from a config section"""
+    cfg = configparser.ConfigParser(allow_no_value=True, strict=False)
+    cfg.read(path)
+
+    if not cfg.has_section(section):
+        print(f"Section [{section}] not in {path}")
+        return
+
+    for k in keys:
+        print(f"Removing {k} from [{section}] in {path}")
+        cfg.remove_option(section, k)
+
+    with open(path, "w", encoding=encoding) as f:
+        print(f"Writing changes to config at {path}")
+        cfg.write(f)
+
+
+def drop(path, encoding, section):
+    """Completely remove a section from a config file"""
+    cfg = configparser.ConfigParser(allow_no_value=True, strict=False)
+    cfg.read(path)
+
+    if not cfg.has_section(section):
+        print(f"Section [{section}] not in {path}")
+        return
+    print(f"Removing Section [{section}] from {path}")
+    cfg.remove_section(section)
+
+    with open(path, "w", encoding=encoding) as f:
+        print(f"Writing changes to config at {path}")
+        cfg.write(f)
+
+
+if __name__ == "__main__":
+    HELP = """
+    edini
+    --
+
+    - Add or remove options from a section
+    - Add new sections with options
+    - Remove sections entirely
+
+    Example usage for adding:
+    edini add ~/.my.cnf client -o port=3306,host=127.0.0.1
+
+    Removing:
+    edini remove /etc/my.cnf server -o bind-address,skip-networking
+
+    Delete a selection:
+    edinit drop /etc/my.cnf mariadb-dump
+    """
+    parser = argparse.ArgumentParser(usage=HELP)
+    parser.add_argument("-e", "--encoding", default="utf8")
+    parser.add_argument("cmd", choices=["add", "remove", "rm", "drop"])
+    parser.add_argument("file", help="Path to the file")
+    parser.add_argument("section", help="Will be added if it does not exist")
+    parser.add_argument("-o", "--options", help="key1=val1,key2=val2")
+    args = parser.parse_args()
+
+    FILE = str(args.file)
+    if FILE.startswith("~"):
+        FILE = os.path.expanduser(FILE)
+    if not os.path.exists(FILE):
+        sys.exit(f"File not found: {FILE}")
+
+    SECTION = str(args.section)
+
+    if args.cmd == "add":
+        key_values = {}
+        for i in args.options.split(","):
+            j = i.split("=", 1)
+            if len(j) != 2:
+                print(f"Skipping {i}, wrong format")
+                continue
+            key_values[j[0]] = j[1]
+        if len(key_values) == 0:
+            print("No valid keys to add. Exiting...")
+            sys.exit(1)
+        add(FILE, args.encoding, SECTION, key_values)
+        sys.exit(0)
+
+    if args.cmd in ("remove", "rm"):
+        key_names = []
+        for i in args.kv.split(","):
+            key_names.append(str(i))
+        if len(key_names) == 0:
+            print("No valid keys to add. Exiting...")
+            sys.exit(1)
+        rm(FILE, args.encoding, SECTION, key_names)
+        sys.exit(0)
+    if args.cmd == "drop":
+        drop(FILE, args.encoding, SECTION)
+        sys.exit(0)
