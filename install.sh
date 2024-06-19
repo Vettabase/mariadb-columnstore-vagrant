@@ -33,6 +33,7 @@ JOIN_PASS="${JOIN_PASS:-joiner123)}"
 REPL_USER="${REPL_USER:-repl}"
 REPL_PASS="${REPL_PASS:-repl123}"
 REPL_GRANTS="REPLICA MONITOR,REPLICATION REPLICA,REPLICATION REPLICA ADMIN,REPLICATION MASTER ADMIN"
+JEMALLOC_PATH="/usr/lib/x86_64-linux-gnu/libjemalloc.so.2"
 
 mariadb_configure_columnstore() {
 	mcsSetConfig CrossEngineSupport User ${JOIN_USER}
@@ -81,6 +82,9 @@ preconfig () {
     localedef -i en_US -f UTF-8 en_US.UTF-8
 }
 
+set_jemalloc() {
+    /vagrant/utils/edini add /lib/systemd/system/mariadb.service Service -o "Environment=LD_PRELOAD=${JEMALLOC_PATH}"
+}
 
 install_mariadb() {
     REPO_URL="deb [signed-by=/etc/apt/keyrings/mariadb-keyring.pgp] https://deb.mariadb.org/${MDB_VERSION}/ubuntu ${OS_CODENAME} main"
@@ -129,9 +133,11 @@ install_mariadb() {
     echo "server_id=${NODE_NUMBER}" >> $CS_CNF
 
     systemctl enable mariadb
+    set_jemalloc
+    systemctl daemon-reload
     systemctl restart mariadb
     systemctl restart mariadb-columnstore
-    
+
     . /vagrant/utils/timezones-load.sh
 
 
@@ -153,7 +159,7 @@ install_cmapi() {
 
         apt-get install -yq mariadb-columnstore-cmapi
         systemctl enable mariadb-columnstore-cmapi
-    
+
         CMAPI_CONFIG_FILE=/etc/columnstore/cmapi_server.conf
         sed -i "s|^log.access_file.*|log.access_file = '/var/lib/columnstore/cs.access.log'|" $CMAPI_CONFIG_FILE
         sed -i "s|^log.error_file.*|log.error_file = '/var/lib/columnstore/cs.error.log'|" $CMAPI_CONFIG_FILE
@@ -195,6 +201,7 @@ mariadb_install_engines() {
     [[ $MDB_EXTRA_ENGINES == *",FEDERATED,"* ]]   && mariadb -e "INSTALL SONAME 'ha_federated';"
     [[ $MDB_EXTRA_ENGINES == *",FEDERATEDX,"* ]]  && mariadb -e "INSTALL SONAME 'ha_federatedx';"
 }
+
 
 install_base
 preconfig
