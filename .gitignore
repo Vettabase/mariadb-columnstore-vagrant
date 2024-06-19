@@ -3,3 +3,5 @@ config.sh
 **/*.box
 boot/
 usr/
+data*/
+.cmapi_key
