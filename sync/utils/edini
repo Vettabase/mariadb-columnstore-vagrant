@@ -79,7 +79,7 @@ if __name__ == "__main__":
     edini remove /etc/my.cnf server -o bind-address,skip-networking
 
     Delete a selection:
-    edinit drop /etc/my.cnf mariadb-dump
+    edini drop /etc/my.cnf mariadb-dump
     """
     parser = argparse.ArgumentParser(usage=HELP)
     parser.add_argument("-e", "--encoding", default="utf8")
