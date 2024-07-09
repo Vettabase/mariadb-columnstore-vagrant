@@ -171,18 +171,24 @@ cluster_up() {
         export MDB_CLUSTER_SIZE=${MDB_CLUSTER_SIZE:-3}
     fi
     read -p "Cluster size is ${MDB_CLUSTER_SIZE}, continue?"
-    vagrant up
+    vagrant up --no-provision && vagrant provision
 }
 
 cluster_destroy() {
-    vagrant destroy -f && rm -Rf .vagrant
+    vagrant destroy -f
     if [[ -d columnstore ]]
     then
         rm -Rf columnstore
     fi
     for v in $(virsh list --all | grep mariadb-columnstore-vagrant | awk '{print $2}')
     do
-        virsh undefine $v
+        echo "Deleting VM defintion: ${v}"
+        virsh undefine "${v}"
+    done
+    for v in $(virsh vol-list --pool default | grep mariadb-columnstore-vagrant | awk '{print $1}')
+    do
+        echo "Deleting volume image: ${v}"
+        virsh vol-delete --pool default "${v}"
     done
 }
 
