@@ -61,7 +61,7 @@ status() {
         curl -k -s https://${1}:8640/cmapi/0.4.0/cluster/status \
         --header "Content-Type:application/json" \
         --header "x-api-key:${k}" \
-        | jq . 
+        | jq .
     fi
 }
 
@@ -163,9 +163,36 @@ mode_set() {
     --data "{\"timeout\":15, \"mode\": \"${2}\"}" -k | jq .
 }
 
+cluster_up() {
+    if [[ ! -z $1 ]]
+    then
+        export MDB_CLUSTER_SIZE=$1
+    else
+        export MDB_CLUSTER_SIZE=${MDB_CLUSTER_SIZE:-3}
+    fi
+    read -p "Cluster size is ${MDB_CLUSTER_SIZE}, continue?"
+    vagrant up
+}
+
+cluster_destroy() {
+    vagrant destroy -f && rm -Rf .vagrant
+    if [[ -d columnstore ]]
+    then
+        rm -Rf columnstore
+    fi
+    for v in $(virsh list --all | grep mariadb-columnstore-vagrant | awk '{print $2}')
+    do
+        virsh undefine $v
+    done
+}
+
 local_cmd="${1}"
 shift
 case $local_cmd in
+    up)
+        cluster_up "$@" ;;
+    destroy)
+        cluster_destroy ;;
     add)
         add "$@" ;;
     rw)
