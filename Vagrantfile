@@ -11,15 +11,28 @@ else
   cluster_size = 1
 end
 
+ENV['VAGRANT_NO_PARALLEL'] = 'yes'
+
 first_ip = 10
 ip = '192.168.50'
 primary_ip = "#{ip}.#{first_ip+1}"
+msg = (
+"<------------------------------->\n" +
+"<   MariaDB ColumnStore Image   >\n" +
+"<     by Vettabasse             >\n" +
+"<------------------------------->\n" +
+"\n" +
+"MariaDB ColumnStore Unofficial Documentation Project:\n" +
+"http://columnstore-docs.vettabase.com\n" +
+"\n" +
+"To obtain assistance or training from Vettabase:\n" +
+"https://vettabase.com\n")
 
 Vagrant.configure("2") do |config|
   config.vm.box = ENV['BOX'] || "generic/ubuntu2204"
   config.vm.synced_folder "sync", "/vagrant", type: "nfs",
     nfs_udp: false, nfs_version: 4
-  
+
   1.upto(cluster_size) do |i|
     system('mkdir', '-p', "columnstore/data#{i}")
     config.vm.synced_folder "columnstore/data#{i}", "/var/lib/columnstore/data#{i}", type: "nfs",
@@ -29,18 +42,7 @@ Vagrant.configure("2") do |config|
   1.upto(cluster_size) do |i|
       vm_id = "cs#{i}"
       config.vm.define vm_id do |node|
-        node.vm.post_up_message = (
-            "<------------------------------->\n" +
-            "<   MariaDB ColumnStore Image   >\n" +
-            "<     by Vettabasse             >\n" +
-            "<------------------------------->\n" +
-            "\n" +
-            "MariaDB ColumnStore Unofficial Documentation Project:\n" +
-            "http://columnstore-docs.vettabase.com\n" +
-            "\n" +
-            "To obtain assistance or training from Vettabase:\n" +
-            "https://vettabase.com\n"
-        )
+        node.vm.post_up_message = msg
 
         node.vm.network "private_network", ip: "#{ip}.#{first_ip+i}"
         node.vm.hostname = vm_id
