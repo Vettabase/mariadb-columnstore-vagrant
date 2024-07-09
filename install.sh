@@ -114,7 +114,7 @@ install_mariadb() {
 
     if [[ -e /vagrant/custom.cnf ]]
     then
-        cp /vagrant/custom.cnf /etc/mysql/mariadn.conf.d/custom.cnf
+        cp /vagrant/custom.cnf /etc/mysql/mariadb.conf.d/custom.cnf
     fi
 
 	CS_CNF="/etc/mysql/mariadb.conf.d/99_cs.cnf"
