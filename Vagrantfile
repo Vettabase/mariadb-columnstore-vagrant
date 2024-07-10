@@ -35,7 +35,7 @@ Vagrant.configure("2") do |config|
 
   1.upto(cluster_size) do |i|
     system('mkdir', '-p', "columnstore/data#{i}")
-    config.vm.synced_folder "columnstore/data#{i}", "/var/lib/columnstore/data#{i}", type: "nfs",
+    config.vm.synced_folder "columnstore/", "/var/lib/columnstore/", type: "nfs",
       nfs_udp: false, nfs_version: 4, mount_options: ["rw", "sync"]
   end
 

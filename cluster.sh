@@ -3,19 +3,25 @@
 PRIMARY_IP="${PRIMARY_IP:-192.168.50.11}"
 CMAPI_FILE=".cmapi_key"
 
+if [[ -e ${PWD}/config.sh ]]
+then
+    echo "Sourcing config.sh"
+    source ${PWD}/config.sh
+fi
 
-cmd() {
+
+_cmd() {
     node=$1
     shift
     vagrant ssh $node -c "$@"
 }
 
 restart_cmapi() {
-    cmd $1 "systemctl restart mariadb-columnstore-cmapi"
+    _cmd $1 "systemctl restart mariadb-columnstore-cmapi"
 }
 
 restart_mariadb() {
-    cmd $1 "system restart mariadb"
+    _cmd $1 "system restart mariadb"
 }
 
 gen_key() {
@@ -175,6 +181,12 @@ cluster_up() {
 }
 
 cluster_destroy() {
+    if [[ ! -z $1 ]]
+    then
+        export MDB_CLUSTER_SIZE=$1
+    else
+        export MDB_CLUSTER_SIZE=${MDB_CLUSTER_SIZE:-3}
+    fi
     vagrant destroy -f
     if [[ -d columnstore ]]
     then
@@ -190,6 +202,17 @@ cluster_destroy() {
         echo "Deleting volume image: ${v}"
         virsh vol-delete --pool default "${v}"
     done
+}
+
+_usage() {
+    echo "Please specify a command"
+    echo "cluster.sh [command]"
+    IFS=$'\n'
+    for f in $(declare -F)
+    do
+        echo "${f:11}" | grep -v ^_
+    done
+
 }
 
 local_cmd="${1}"
@@ -230,5 +253,5 @@ case $local_cmd in
     restart-mariadb)
         restart_mariadb"$@" ;;
     *)
-        echo "unknown command" ;;
+        _usage ;;
 esac
