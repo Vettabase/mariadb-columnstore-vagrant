@@ -35,15 +35,7 @@ REPL_PASS="${REPL_PASS:-repl123}"
 REPL_GRANTS="REPLICA MONITOR,REPLICATION REPLICA,REPLICATION REPLICA ADMIN,REPLICATION MASTER ADMIN"
 JEMALLOC_PATH="/usr/lib/x86_64-linux-gnu/libjemalloc.so.2"
 
-mariadb_configure_columnstore() {
-	mcsSetConfig CrossEngineSupport User ${JOIN_USER}
-	mcsSetConfig CrossEngineSupport Password ${JOIN_PASS}
-	mcsSetConfig CrossEngineSupport host "127.0.0.1"
-    mariadb -e "CREATE USER IF NOT EXISTS '${JOIN_USER}'@'127.0.0.1' IDENTIFIED BY '${JOIN_PASS}'"
-    mariadb -e "GRANT SELECT,PROCESS ON *.* TO '${JOIN_USER}'@'127.0.0.1'"
-}
-
-mariadb_configure_custom_sql() {
+mariadb_load_custom_sql() {
     VAGRANT_USER="GRANT ALL PRIVILEGES ON *.* TO 'vagrant'@'localhost' IDENTIFIED VIA unix_socket;"
     mariadb --show-warnings -NBe "${VAGRANT_USER}"
     mariadb --show-warnings -NBe "FLUSH PRIVILEGES;"
@@ -56,9 +48,9 @@ mariadb_configure_custom_sql() {
     fi
 }
 
-install_base() {
-    apt-get update -yq
-    apt-get install -yq \
+base_install() {
+    apt-get update -yqq
+    apt-get install -yqq \
         apt-transport-https \
         curl \
         pwgen \
@@ -68,7 +60,7 @@ install_base() {
         jq
 }
 
-preconfig () {
+mariadb_pre_install () {
     sysctl vm.swappiness=$OS_SWAPPINESS
     echo $OS_SWAPPINESS > /proc/sys/vm/swappiness
     echo "vm.swappiness=$OS_SWAPPINESS" >> $( ls -1 /etc/sysctl.d/*.conf | tail -1 )
@@ -88,7 +80,7 @@ set_jemalloc() {
     /vagrant/utils/edini add /lib/systemd/system/mariadb.service Service -o "Environment=LD_PRELOAD=${JEMALLOC_PATH}"
 }
 
-install_mariadb() {
+mariadb_install() {
     REPO_URL="deb [signed-by=/etc/apt/keyrings/mariadb-keyring.pgp] https://deb.mariadb.org/${MDB_VERSION}/ubuntu ${OS_CODENAME} main"
     REPO_FILE="/etc/apt/sources.list.d/mariadb.list"
     KEY_FILE=/etc/apt/keyrings/mariadb-keyring.pgp
@@ -101,11 +93,16 @@ install_mariadb() {
     then
         echo ${REPO_URL} > ${REPO_FILE}
     fi
-    apt-get update -yq
-    apt-get install -yq \
-        mariadb-server \
-        mariadb-backup \
-        mariadb-plugin-columnstore
+
+    if [[ $MDB_CLUSTER_SIZE -gt 1 ]]
+    then
+        PACKAGES="mariadb-server mariadb-backup mariadb-plugin-columnstore mariadb-columnstore-cmapi"
+    else
+        PACKAGES="mariadb-server mariadb-backup mariadb-plugin-columnstore"
+    fi
+
+    apt-get update -yqq
+    apt-get install -yqq ${PACKAGES}
 
     if  [[ $MDB_ALLOW_REMOTE_CONNECTIONS == 1 ]]
     then
@@ -134,41 +131,25 @@ install_mariadb() {
     echo "gtid_strict_mode= ON" >> $CS_CNF
     echo "server_id=${NODE_NUMBER}" >> $CS_CNF
 
-    systemctl enable mariadb
     set_jemalloc
     systemctl daemon-reload
     systemctl restart mariadb
-    systemctl restart mariadb-columnstore
+    if [[ $(dpkg --get-selections | grep mariadb-columnstore-cmapi | wc -l) -eq 1 ]]
+    then
+        systemctl restart mariadb-columnstore-cmapi
+    fi
 
     . /vagrant/utils/timezones-load.sh
-
-
 }
 
-install_cmapi() {
-# MDB_CLUSTER_SIZE = 'SINGLE' or 1, excludes CMAPI.
-# In other cases:
-#     - Install CMPAI
-#     - Enable and restart both MariaDB and CMAPI services
-#     - Enable CMAPI logs
-#     - Restart CMAPI again to make config changes effective
+mariadb_post_install() {
     if [ $MDB_CLUSTER_SIZE -gt 1 ]; then
         mariadb -e "CREATE USER IF NOT EXISTS '${REPL_USER}'@'%' IDENTIFIED BY '${REPL_PASS}'"
         mariadb -e "GRANT ${REPL_GRANTS} ON *.* TO '${REPL_USER}'@'%'"
 
-        systemctl stop mariadb
-        systemctl stop mariadb-columnstore
-
-        apt-get install -yq mariadb-columnstore-cmapi
-        systemctl enable mariadb-columnstore-cmapi
-
         CMAPI_CONFIG_FILE=/etc/columnstore/cmapi_server.conf
         sed -i "s|^log.access_file.*|log.access_file = '/var/lib/columnstore/cs.access.log'|" $CMAPI_CONFIG_FILE
         sed -i "s|^log.error_file.*|log.error_file = '/var/lib/columnstore/cs.error.log'|" $CMAPI_CONFIG_FILE
-
-        # previous changes require restart
-        systemctl restart mariadb
-        systemctl restart mariadb-columnstore-cmapi
 
         if [[ ${NODE_NUMBER} -gt 1 ]]
         then
@@ -178,9 +159,23 @@ install_cmapi() {
             mariadb -e "SET GLOBAL read_only=ON"
         fi
     fi
+	mcsSetConfig CrossEngineSupport User ${JOIN_USER}
+	mcsSetConfig CrossEngineSupport Password ${JOIN_PASS}
+	mcsSetConfig CrossEngineSupport host "127.0.0.1"
+    mariadb -e "CREATE USER IF NOT EXISTS '${JOIN_USER}'@'127.0.0.1' IDENTIFIED BY '${JOIN_PASS}'"
+    mariadb -e "GRANT SELECT,PROCESS ON *.* TO '${JOIN_USER}'@'127.0.0.1'"
+
+    systemctl restart mariadb
+    if [[ $MDB_CLUSTER_SIZE -gt 1 ]]
+    then
+        systemctl restart mariadb-columnstore-cmapi
+    else
+        systemctl restart mariadb-columnstore
+    fi
+
 }
 
-mariadb_install_engines() {
+mariadb_install_optional_engines() {
     # MDB_EXTRA_ENGINES os a comma-separated list of engines to install.
     # We wrap it with additional commas to avoid confusion if an engine name
     # is contained in another, which currenlty is the case for FEDERATED/FEDERATEDX.
@@ -192,11 +187,11 @@ mariadb_install_engines() {
         MDB_EXTRA_ENGINES=$(echo "$MDB_EXTRA_ENGINES" | tr '[:lower:]' '[:upper:]')
     fi
     # plugins that are in the plugin_dir but not installed
-    [[ $MDB_EXTRA_ENGINES == *",S3,"* ]]          && apt-get install -yq mariadb-plugin-s3
-    [[ $MDB_EXTRA_ENGINES == *",CONNECT,"* ]]     && apt-get install -yq mariadb-plugin-connect
-    [[ $MDB_EXTRA_ENGINES == *",MROONGA,"* ]]     && apt-get install -yq mariadb-plugin-mroonga
-    [[ $MDB_EXTRA_ENGINES == *",OQGRAPH,"* ]]     && apt-get install -yq mariadb-plugin-oqgraph
-    [[ $MDB_EXTRA_ENGINES == *",SPIDER,"* ]]      && apt-get install -yq mariadb-plugin-spider
+    [[ $MDB_EXTRA_ENGINES == *",S3,"* ]]          && apt-get install -yqq mariadb-plugin-s3
+    [[ $MDB_EXTRA_ENGINES == *",CONNECT,"* ]]     && apt-get install -yqq mariadb-plugin-connect
+    [[ $MDB_EXTRA_ENGINES == *",MROONGA,"* ]]     && apt-get install -yqq mariadb-plugin-mroonga
+    [[ $MDB_EXTRA_ENGINES == *",OQGRAPH,"* ]]     && apt-get install -yqq mariadb-plugin-oqgraph
+    [[ $MDB_EXTRA_ENGINES == *",SPIDER,"* ]]      && apt-get install -yqq mariadb-plugin-spider
     # plugins that need be installed from a separate package
     [[ $MDB_EXTRA_ENGINES == *",ARCHIVE,"* ]]     && mariadb -e "INSTALL SONAME 'ha_archive';"
     [[ $MDB_EXTRA_ENGINES == *",BLACKHOLE,"* ]]   && mariadb -e "INSTALL SONAME 'ha_blackhole';"
@@ -205,13 +200,12 @@ mariadb_install_engines() {
 }
 
 
-install_base
-preconfig
-install_mariadb
-mariadb_configure_columnstore
-mariadb_install_engines
-install_cmapi
-mariadb_configure_custom_sql
+base_install
+mariadb_pre_install
+mariadb_install
+mariadb_post_install
+mariadb_install_optional_engines
+mariadb_load_custom_sql
 
 
 if [ $OS_INSTALL_MYCLI == 1 ]; then
