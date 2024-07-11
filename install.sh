@@ -61,6 +61,7 @@ base_install() {
 }
 
 mariadb_pre_install () {
+    chmod -R 775 /var/lib/columnstore
     sysctl vm.swappiness=$OS_SWAPPINESS
     echo $OS_SWAPPINESS > /proc/sys/vm/swappiness
     echo "vm.swappiness=$OS_SWAPPINESS" >> $( ls -1 /etc/sysctl.d/*.conf | tail -1 )
