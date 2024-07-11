@@ -9,6 +9,11 @@ then
     source ${PWD}/config.sh
 fi
 
+if [[ ! -z $VAGRANT_DEFAULT_PROVIDER ]]
+then
+    echo "Provider: $VAGRANT_DEFAULT_PROVIDER"
+fi
+
 
 _cmd() {
     node=$1
